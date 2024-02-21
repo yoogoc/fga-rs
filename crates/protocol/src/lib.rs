@@ -1,12 +1,14 @@
+mod tuple;
 mod typesystem;
 
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
+pub use tuple::Tuple;
 pub use typesystem::Typesystem;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct AuthorizationModel {
+pub struct AuthzModel {
     pub types: Vec<Type>,
 }
 
@@ -81,4 +83,10 @@ pub struct Relation {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct RelationTypeInfo {
     pub directly_related_user_types: Vec<RelationReference>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct Tenant {
+    pub id: String,
+    pub name: String,
 }
