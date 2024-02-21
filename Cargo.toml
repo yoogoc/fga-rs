@@ -1,0 +1,24 @@
+[package]
+name = "fga-rs"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+members = ["crates/protocol", "crates/checker", "crates/storage"]
+
+[workspace.dependencies]
+actix = "0.13.1"
+clap = "4.4.11"
+env_logger = "0.11.1"
+# kube = "0.88.1"
+lazy_static = "1.4.0"
+log = "0.4.20"
+rayon = "1.8.0"
+serde = "1.0.193"
+tokio = "1.34.0"
+tonic = "0.11.0"
+tower = "0.4.13"
+tracing = "0.1.40"
+anyhow = "1.0"
+base64 = "0.21"
+moka = "0.12"

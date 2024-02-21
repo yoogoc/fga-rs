@@ -1,0 +1,44 @@
+use anyhow::Ok;
+use base64::{engine::general_purpose::STANDARD, Engine};
+use moka::sync::Cache;
+
+use crate::{CheckRequest, CheckResult, Checker};
+
+pub struct CacheChecker {
+    delegate: Box<dyn Checker>,
+    cache: Cache<String, bool>,
+}
+
+impl Checker for CacheChecker {
+    fn check(&self, req: CheckRequest) -> anyhow::Result<CheckResult> {
+        let key = self.request_cache_key(&req);
+        if let Some(allow) = self.cache.get(&key) {
+            Ok(CheckResult::new(allow))
+        } else {
+            let resp = self.delegate.check(req)?;
+            self.cache.insert(key, resp.allow);
+            Ok(CheckResult::new(resp.allow))
+        }
+    }
+
+    fn close(&self) {
+        self.cache.invalidate_all();
+    }
+}
+
+impl CacheChecker {
+    fn request_cache_key(&self, req: &CheckRequest) -> String {
+        let mut contextual_tuples_cache_key = String::new();
+        for tk in req.contextual_tuples.clone() {
+            let key = format!("/{}", tk.cache_key());
+            contextual_tuples_cache_key.push_str(key.as_str());
+        }
+        STANDARD.encode(format!(
+            "{}/{}/{}{}",
+            req.typesystem.tenant_id,
+            req.typesystem.model_id,
+            req.tuple_key.cache_key(),
+            contextual_tuples_cache_key
+        ))
+    }
+}
