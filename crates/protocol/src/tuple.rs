@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct Tuple {
     pub user_type: String,
     pub user_id: String,
-    pub user_relation: String,
+    pub user_relation: Option<String>,
     pub relation: String,
     pub object_type: String,
     pub object_id: String,

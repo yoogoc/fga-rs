@@ -110,6 +110,8 @@ dependencies = [
  "base64",
  "moka",
  "protocol",
+ "storage",
+ "thiserror",
 ]
 
 [[package]]
@@ -346,7 +348,9 @@ dependencies = [
 name = "protocol"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "serde",
+ "thiserror",
 ]
 
 [[package]]

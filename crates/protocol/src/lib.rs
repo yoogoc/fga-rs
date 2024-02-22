@@ -1,3 +1,4 @@
+mod error;
 mod tuple;
 mod typesystem;
 
@@ -6,6 +7,8 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 pub use tuple::Tuple;
 pub use typesystem::Typesystem;
+
+pub const WILDCARD: &str = "*";
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct AuthzModel {
@@ -25,15 +28,22 @@ pub enum Userset {
     Computed(ObjectRelation),
     TupleTo(TupleToUserset),
     Union {
-        children: Vec<Userset>,
+        children: Vec<Box<Userset>>,
     },
     Intersection {
-        children: Vec<Userset>,
+        children: Vec<Box<Userset>>,
     },
     Difference {
         base: Box<Userset>,
         subtract: Box<Userset>,
     },
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub enum SetOperator {
+    Union,
+    Intersection,
+    Exclusion,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -62,14 +72,25 @@ pub enum RelationReference {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct TupleKey {
-    pub object: String,
+    pub user_type: String,
+    pub user_id: String,
+    pub user_relation: String,
     pub relation: String,
-    pub user: String,
+    pub object_type: String,
+    pub object_id: String,
 }
 
 impl TupleKey {
     pub fn cache_key(&self) -> String {
-        format!("{}-{}-{}", &self.object, &self.relation, &self.user,)
+        format!(
+            "{}{}-{}-{}{}{}",
+            &self.object_type,
+            &self.object_id,
+            &self.relation,
+            &self.user_type,
+            &self.user_id,
+            &self.user_relation
+        )
     }
 }
 
