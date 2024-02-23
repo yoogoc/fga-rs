@@ -1,4 +1,5 @@
 use anyhow::{Ok, Result};
+use async_trait::async_trait;
 use protocol::{RelationReference, SetOperator, TupleKey, TupleToUserset, Userset, WILDCARD};
 use storage::{RelationshipTupleReader, TupleFilter};
 
@@ -8,40 +9,44 @@ use crate::{
 };
 
 pub struct LocalChecker {
-    pub resolver: Box<dyn Checker>,
-    pub tuple_reader: Box<dyn RelationshipTupleReader>,
+    pub resolver: Box<dyn Checker + Send + Sync>,
+    pub tuple_reader: Box<dyn RelationshipTupleReader + Send + Sync>,
 }
 
+#[async_trait]
 impl Checker for LocalChecker {
-    fn check(&self, req: CheckRequest) -> Result<CheckResult> {
+    async fn check(&self, req: CheckRequest) -> Result<CheckResult> {
         let relation = req
             .typesystem
             .get_relation(&req.tuple_key.object_type, &req.tuple_key.relation)?;
-        self.check_rewrite(&req, &relation.rewrite)
+        self.check_rewrite(&req, &relation.rewrite).await
     }
 
-    fn close(&self) {}
+    async fn close(&self) {}
 }
 
 impl LocalChecker {
-    fn check_rewrite(&self, req: &CheckRequest, rewrite: &Userset) -> Result<CheckResult> {
+    async fn check_rewrite(&self, req: &CheckRequest, rewrite: &Userset) -> Result<CheckResult> {
         match rewrite {
-            Userset::This => self.check_direct(req),
-            Userset::Computed(or) => self.check_computed(req, &or.relation),
-            Userset::TupleTo(ttu) => self.check_tuple_to(req, ttu),
+            Userset::This => self.check_direct(req).await,
+            Userset::Computed(or) => self.check_computed(req, &or.relation).await,
+            Userset::TupleTo(ttu) => self.check_tuple_to(req, ttu).await,
             Userset::Union { children } => {
                 self.check_set_operation(req, SetOperator::Union, children)
+                    .await
             }
             Userset::Intersection { children } => {
                 self.check_set_operation(req, SetOperator::Intersection, children)
+                    .await
             }
             Userset::Difference { base, subtract } => {
                 let children = vec![base.to_owned(), subtract.to_owned()];
                 self.check_set_operation(req, SetOperator::Intersection, &children)
+                    .await
             }
         }
     }
-    fn check_direct(&self, req: &CheckRequest) -> Result<CheckResult> {
+    async fn check_direct(&self, req: &CheckRequest) -> Result<CheckResult> {
         let related_usersets = req
             .typesystem
             .get_directly_related_types(&req.tuple_key.object_type, &req.tuple_key.relation)?;
@@ -104,7 +109,8 @@ impl LocalChecker {
 
         let (tuples, _) = self
             .tuple_reader
-            .list(&req.typesystem.tenant_id, filter, None)?;
+            .list(&req.typesystem.tenant_id, filter, None)
+            .await?;
 
         if tuples.is_empty() {
             return Ok(CheckResult::new_dqc(
@@ -135,56 +141,62 @@ impl LocalChecker {
             ));
         }
         // TODO concurrence
-        let handlers = tuples
-            .iter()
-            .filter_map(|t| {
-                if t.user_type.eq(&req.tuple_key.user_type) || matches!(t.user_relation, None) {
-                    return None;
-                }
-                Some(|| {
-                    self.resolver.check(CheckRequest {
-                        typesystem: req.typesystem.clone(),
-                        tuple_key: TupleKey {
-                            user_type: String::from(&req.tuple_key.user_type),
-                            user_id: String::from(&req.tuple_key.user_id),
-                            user_relation: String::from(&req.tuple_key.user_relation),
-                            relation: String::from(t.user_relation.as_ref().unwrap()),
-                            object_type: String::from(&t.user_type),
-                            object_id: String::from(&t.user_id),
-                        },
-                        contextual_tuples: req.contextual_tuples.clone(),
-                        resolution_metadata: ResolutionMetadata {
-                            depth: req.resolution_metadata.depth,
-                            datastore_query_count: req.resolution_metadata.datastore_query_count,
-                        },
-                        visited_paths: req.visited_paths.clone(),
-                    })
+        // let handlers = tuples
+        tuples.iter().filter_map(|t| {
+            if t.user_type.eq(&req.tuple_key.user_type) || matches!(t.user_relation, None) {
+                return None;
+            }
+            Some(|| {
+                self.resolver.check(CheckRequest {
+                    typesystem: req.typesystem.clone(),
+                    tuple_key: TupleKey {
+                        user_type: String::from(&req.tuple_key.user_type),
+                        user_id: String::from(&req.tuple_key.user_id),
+                        user_relation: String::from(&req.tuple_key.user_relation),
+                        relation: String::from(t.user_relation.as_ref().unwrap()),
+                        object_type: String::from(&t.user_type),
+                        object_id: String::from(&t.user_id),
+                    },
+                    contextual_tuples: req.contextual_tuples.clone(),
+                    resolution_metadata: ResolutionMetadata {
+                        depth: req.resolution_metadata.depth,
+                        datastore_query_count: req.resolution_metadata.datastore_query_count,
+                    },
+                    visited_paths: req.visited_paths.clone(),
                 })
             })
-            .collect();
+        });
+        // .collect();
 
-        union_check(handlers)
+        // union_check(handlers)
+        todo!()
     }
-    fn check_computed(&self, req: &CheckRequest, relation: &str) -> Result<CheckResult> {
-        self.resolver.check(CheckRequest {
-            typesystem: req.typesystem.clone(),
-            tuple_key: TupleKey {
-                user_type: String::from(&req.tuple_key.user_type),
-                user_id: String::from(&req.tuple_key.user_id),
-                user_relation: String::from(&req.tuple_key.user_relation),
-                relation: String::from(relation),
-                object_type: String::from(&req.tuple_key.object_type),
-                object_id: String::from(&req.tuple_key.object_id),
-            },
-            contextual_tuples: req.contextual_tuples.clone(),
-            resolution_metadata: ResolutionMetadata {
-                depth: req.resolution_metadata.depth,
-                datastore_query_count: req.resolution_metadata.datastore_query_count,
-            },
-            visited_paths: req.visited_paths.clone(),
-        })
+    async fn check_computed(&self, req: &CheckRequest, relation: &str) -> Result<CheckResult> {
+        self.resolver
+            .check(CheckRequest {
+                typesystem: req.typesystem.clone(),
+                tuple_key: TupleKey {
+                    user_type: String::from(&req.tuple_key.user_type),
+                    user_id: String::from(&req.tuple_key.user_id),
+                    user_relation: String::from(&req.tuple_key.user_relation),
+                    relation: String::from(relation),
+                    object_type: String::from(&req.tuple_key.object_type),
+                    object_id: String::from(&req.tuple_key.object_id),
+                },
+                contextual_tuples: req.contextual_tuples.clone(),
+                resolution_metadata: ResolutionMetadata {
+                    depth: req.resolution_metadata.depth,
+                    datastore_query_count: req.resolution_metadata.datastore_query_count,
+                },
+                visited_paths: req.visited_paths.clone(),
+            })
+            .await
     }
-    fn check_tuple_to(&self, req: &CheckRequest, ttu: &TupleToUserset) -> Result<CheckResult> {
+    async fn check_tuple_to(
+        &self,
+        req: &CheckRequest,
+        ttu: &TupleToUserset,
+    ) -> Result<CheckResult> {
         let filter = TupleFilter {
             object_type_eq: Some(String::from(&req.tuple_key.object_type)),
             object_id_eq: Some(String::from(&req.tuple_key.object_id)),
@@ -193,56 +205,58 @@ impl LocalChecker {
         };
         let (tuples, _) = self
             .tuple_reader
-            .list(&req.typesystem.tenant_id, filter, None)?;
+            .list(&req.typesystem.tenant_id, filter, None)
+            .await?;
 
         // TODO concurrence
-        let handlers = tuples
-            .iter()
-            .filter_map(|t| {
-                if t.user_type.eq(&req.tuple_key.user_type) || matches!(t.user_relation, None) {
-                    return None;
-                }
-                Some(|| {
-                    self.resolver.check(CheckRequest {
-                        typesystem: req.typesystem.clone(),
-                        tuple_key: TupleKey {
-                            user_type: String::from(&t.user_type),
-                            user_id: String::from(&t.user_id),
-                            user_relation: String::from(""),
-                            relation: String::from(&ttu.computed_userset.relation),
-                            object_type: String::from(&t.user_type),
-                            object_id: String::from(&t.user_id),
-                        },
-                        contextual_tuples: req.contextual_tuples.clone(),
-                        resolution_metadata: ResolutionMetadata {
-                            depth: req.resolution_metadata.depth,
-                            datastore_query_count: req.resolution_metadata.datastore_query_count,
-                        },
-                        visited_paths: req.visited_paths.clone(),
-                    })
+        // let handlers = tuples
+        tuples.iter().filter_map(|t| {
+            if t.user_type.eq(&req.tuple_key.user_type) || matches!(t.user_relation, None) {
+                return None;
+            }
+            Some(|| {
+                self.resolver.check(CheckRequest {
+                    typesystem: req.typesystem.clone(),
+                    tuple_key: TupleKey {
+                        user_type: String::from(&t.user_type),
+                        user_id: String::from(&t.user_id),
+                        user_relation: String::from(""),
+                        relation: String::from(&ttu.computed_userset.relation),
+                        object_type: String::from(&t.user_type),
+                        object_id: String::from(&t.user_id),
+                    },
+                    contextual_tuples: req.contextual_tuples.clone(),
+                    resolution_metadata: ResolutionMetadata {
+                        depth: req.resolution_metadata.depth,
+                        datastore_query_count: req.resolution_metadata.datastore_query_count,
+                    },
+                    visited_paths: req.visited_paths.clone(),
                 })
             })
-            .collect();
+        });
+        // .collect();
 
-        union_check(handlers)
+        // union_check(handlers)
+        todo!()
     }
-    fn check_set_operation(
+    async fn check_set_operation(
         &self,
         req: &CheckRequest,
         operator: SetOperator,
         children: &Vec<Box<Userset>>,
     ) -> Result<CheckResult> {
-        let handlers = children
-            .iter()
-            .map(|rewrite| || self.check_rewrite(&req, rewrite))
-            .collect();
-        match operator {
-            SetOperator::Union => union_check(handlers),
-            SetOperator::Intersection => intersection_check(handlers),
-            SetOperator::Exclusion => exclusion_check(
-                handlers.get(0).unwrap().to_owned(),
-                handlers.get(1).unwrap().to_owned(),
-            ),
-        }
+        // let handlers = children
+        //     .iter()
+        //     .map(|rewrite| || self.check_rewrite(&req, rewrite))
+        //     .collect();
+        // match operator {
+        //     SetOperator::Union => union_check(handlers),
+        //     SetOperator::Intersection => intersection_check(handlers),
+        //     SetOperator::Exclusion => exclusion_check(
+        //         handlers.get(0).unwrap().to_owned(),
+        //         handlers.get(1).unwrap().to_owned(),
+        //     ),
+        // }
+        todo!()
     }
 }

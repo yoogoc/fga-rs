@@ -1,14 +1,17 @@
+use async_trait::async_trait;
+
 use crate::{CheckRequest, CheckResult, Checker};
 
 pub struct RemoteChecker {}
 
+#[async_trait]
 impl Checker for RemoteChecker {
-    fn check(&self, req: CheckRequest) -> anyhow::Result<CheckResult> {
+    async fn check(&self, req: CheckRequest) -> anyhow::Result<CheckResult> {
         println!("{:?}", req);
         todo!()
     }
 
-    fn close(&self) {
+    async fn close(&self) {
         todo!()
     }
 }

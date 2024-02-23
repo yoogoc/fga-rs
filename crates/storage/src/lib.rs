@@ -1,9 +1,13 @@
+mod error;
+pub mod postgres;
+
 use anyhow::Result;
+use async_trait::async_trait;
 use protocol::{AuthzModel, Tenant, Tuple};
 
 pub struct Pagination {
-    pub size: u32,
-    pub page: u32,
+    pub size: u64,
+    pub page: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -19,32 +23,41 @@ pub struct TupleFilter {
     pub or: Option<Vec<TupleFilter>>,
 }
 
+#[async_trait]
 pub trait RelationshipTupleReader {
-    fn list(
+    async fn list(
         &self,
         tenant_id: &str,
         filter: TupleFilter,
         page: Option<Pagination>,
-    ) -> Result<(Vec<Tuple>, u32)>;
+    ) -> Result<(Vec<Tuple>, u64)>;
 }
 
+#[async_trait]
 pub trait RelationshipTupleWriter {
-    fn save(&self, tenant_id: &str, tuples: Vec<Tuple>) -> Result<()>;
-    fn delete(&self, tenant_id: &str, filter: TupleFilter) -> Result<()>;
+    async fn save(&self, tenant_id: &str, tuples: Vec<Tuple>) -> Result<()>;
+    async fn delete(&self, tenant_id: &str, filter: TupleFilter) -> Result<()>;
 }
 
+#[async_trait]
 pub trait AuthzModelReader {
-    fn get_latest(&self, tenant_id: String) -> Result<AuthzModel>;
-    fn list(&self, tenant_id: String, page: Option<Pagination>) -> Result<(Vec<AuthzModel>, u32)>;
+    async fn get_latest(&self, tenant_id: String) -> Result<AuthzModel>;
+    async fn list(
+        &self,
+        tenant_id: String,
+        page: Option<Pagination>,
+    ) -> Result<(Vec<AuthzModel>, u64)>;
 }
 
+#[async_trait]
 pub trait AuthzModelWriter {
-    fn save(&self, tenant_id: String, model: AuthzModel) -> Result<()>;
+    async fn save(&self, tenant_id: String, model: AuthzModel) -> Result<()>;
 }
 
+#[async_trait]
 pub trait TenantOperator {
-    fn create(&self, tenant_id: String, name: String) -> Result<()>;
-    fn delete(&self, tenant_id: String) -> Result<()>;
-    fn get(&self, tenant_id: String) -> Result<Tenant>;
-    fn list(&self, page: Option<Pagination>) -> Result<(Vec<Tenant>, u32)>;
+    async fn create(&self, tenant_id: String, name: String) -> Result<()>;
+    async fn delete(&self, tenant_id: String) -> Result<()>;
+    async fn get(&self, tenant_id: String) -> Result<Tenant>;
+    async fn list(&self, page: Option<Pagination>) -> Result<(Vec<Tenant>, u64)>;
 }

@@ -1,6 +1,7 @@
 pub mod cache_checker;
 pub mod local_checker;
 pub mod remote_checker;
+use async_trait::async_trait;
 
 pub mod error;
 mod graph;
@@ -43,10 +44,11 @@ impl CheckResult {
     }
 }
 
+#[async_trait]
 pub trait Checker {
-    fn check(&self, req: CheckRequest) -> Result<CheckResult>;
+    async fn check(&self, req: CheckRequest) -> Result<CheckResult>;
     // call when finish a request
-    fn close(&self);
+    async fn close(&self);
 }
 
 // TODO async
