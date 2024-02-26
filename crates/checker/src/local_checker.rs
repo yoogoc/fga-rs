@@ -1,24 +1,20 @@
-use anyhow::{Ok, Result};
+use anyhow::Result;
 use async_trait::async_trait;
+use futures::{future::BoxFuture, FutureExt};
 use protocol::{RelationReference, SetOperator, TupleKey, TupleToUserset, Userset, WILDCARD};
 use storage::{RelationshipTupleReader, TupleFilter};
 
-use crate::{
-    error::CheckerError, exclusion_check, graph::ResolutionMetadata, intersection_check,
-    union_check, CheckRequest, CheckResult, Checker,
-};
+use crate::{error::CheckerError, exclusion_check, graph::ResolutionMetadata, intersection_check, union_check, CheckRequest, CheckResult, Checker};
 
 pub struct LocalChecker {
-    pub resolver: Box<dyn Checker + Send + Sync>,
+    pub resolver: Box<dyn Checker + 'static>,
     pub tuple_reader: Box<dyn RelationshipTupleReader + Send + Sync>,
 }
 
 #[async_trait]
 impl Checker for LocalChecker {
     async fn check(&self, req: CheckRequest) -> Result<CheckResult> {
-        let relation = req
-            .typesystem
-            .get_relation(&req.tuple_key.object_type, &req.tuple_key.relation)?;
+        let relation = req.typesystem.get_relation(&req.tuple_key.object_type, &req.tuple_key.relation)?;
         self.check_rewrite(&req, &relation.rewrite).await
     }
 
@@ -31,18 +27,11 @@ impl LocalChecker {
             Userset::This => self.check_direct(req).await,
             Userset::Computed(or) => self.check_computed(req, &or.relation).await,
             Userset::TupleTo(ttu) => self.check_tuple_to(req, ttu).await,
-            Userset::Union { children } => {
-                self.check_set_operation(req, SetOperator::Union, children)
-                    .await
-            }
-            Userset::Intersection { children } => {
-                self.check_set_operation(req, SetOperator::Intersection, children)
-                    .await
-            }
+            Userset::Union { children } => self.check_set_operation(req, SetOperator::Union, children).await,
+            Userset::Intersection { children } => self.check_set_operation(req, SetOperator::Intersection, children).await,
             Userset::Difference { base, subtract } => {
                 let children = vec![base.to_owned(), subtract.to_owned()];
-                self.check_set_operation(req, SetOperator::Intersection, &children)
-                    .await
+                self.check_set_operation(req, SetOperator::Intersection, &children).await
             }
         }
     }
@@ -78,9 +67,7 @@ impl LocalChecker {
                     }
                 }
                 RelationReference::Relation { r#type, relation } => {
-                    if r#type.eq(&req.tuple_key.user_type)
-                        && relation.eq(&req.tuple_key.user_relation)
-                    {
+                    if r#type.eq(&req.tuple_key.user_type) && relation.eq(&req.tuple_key.user_relation) {
                         Some(TupleFilter {
                             user_type_eq: Some(String::from(&req.tuple_key.user_type)),
                             user_relation_eq: Some(String::from(&req.tuple_key.user_relation)),
@@ -107,16 +94,10 @@ impl LocalChecker {
             filter.or = Some(or_filter);
         }
 
-        let (tuples, _) = self
-            .tuple_reader
-            .list(&req.typesystem.tenant_id, filter, None)
-            .await?;
+        let (tuples, _) = self.tuple_reader.list(&req.typesystem.tenant_id, filter, None).await?;
 
         if tuples.is_empty() {
-            return Ok(CheckResult::new_dqc(
-                false,
-                req.resolution_metadata.datastore_query_count + 1,
-            ));
+            return Ok(CheckResult::new_dqc(false, req.resolution_metadata.datastore_query_count + 1));
         }
 
         // TODO concurrence
@@ -140,37 +121,31 @@ impl LocalChecker {
                 req.resolution_metadata.datastore_query_count + 1,
             ));
         }
-        // TODO concurrence
-        // let handlers = tuples
-        tuples.iter().filter_map(|t| {
-            if t.user_type.eq(&req.tuple_key.user_type) || matches!(t.user_relation, None) {
-                return None;
-            }
-            Some(|| {
-                self.resolver.check(CheckRequest {
-                    typesystem: req.typesystem.clone(),
-                    tuple_key: TupleKey {
-                        user_type: String::from(&req.tuple_key.user_type),
-                        user_id: String::from(&req.tuple_key.user_id),
-                        user_relation: String::from(&req.tuple_key.user_relation),
-                        relation: String::from(t.user_relation.as_ref().unwrap()),
-                        object_type: String::from(&t.user_type),
-                        object_id: String::from(&t.user_id),
-                    },
-                    contextual_tuples: req.contextual_tuples.clone(),
-                    resolution_metadata: ResolutionMetadata {
-                        depth: req.resolution_metadata.depth,
-                        datastore_query_count: req.resolution_metadata.datastore_query_count,
-                    },
-                    visited_paths: req.visited_paths.clone(),
-                })
+        let handlers: Vec<_> = tuples
+            .iter()
+            .filter(|t| !(t.user_type.eq(&req.tuple_key.user_type) || matches!(t.user_relation, None)))
+            .map(move |t| CheckRequest {
+                typesystem: req.typesystem.clone(),
+                tuple_key: TupleKey {
+                    user_type: String::from(&req.tuple_key.user_type),
+                    user_id: String::from(&req.tuple_key.user_id),
+                    user_relation: String::from(&req.tuple_key.user_relation),
+                    relation: String::from(t.user_relation.as_ref().unwrap()),
+                    object_type: String::from(&t.user_type),
+                    object_id: String::from(&t.user_id),
+                },
+                contextual_tuples: req.contextual_tuples.clone(),
+                resolution_metadata: ResolutionMetadata {
+                    depth: req.resolution_metadata.depth,
+                    datastore_query_count: req.resolution_metadata.datastore_query_count,
+                },
+                visited_paths: req.visited_paths.clone(),
             })
-        });
-        // .collect();
+            .collect();
 
-        // union_check(handlers)
-        todo!()
+        union_check(handlers.len(), |i| self.resolver.check(handlers.get(i).unwrap().to_owned())).await
     }
+
     async fn check_computed(&self, req: &CheckRequest, relation: &str) -> Result<CheckResult> {
         self.resolver
             .check(CheckRequest {
@@ -192,30 +167,22 @@ impl LocalChecker {
             })
             .await
     }
-    async fn check_tuple_to(
-        &self,
-        req: &CheckRequest,
-        ttu: &TupleToUserset,
-    ) -> Result<CheckResult> {
+    async fn check_tuple_to(&self, req: &CheckRequest, ttu: &TupleToUserset) -> Result<CheckResult> {
         let filter = TupleFilter {
             object_type_eq: Some(String::from(&req.tuple_key.object_type)),
             object_id_eq: Some(String::from(&req.tuple_key.object_id)),
             relation_eq: Some(String::from(&ttu.tupleset.relation)),
             ..Default::default()
         };
-        let (tuples, _) = self
-            .tuple_reader
-            .list(&req.typesystem.tenant_id, filter, None)
-            .await?;
+        let (tuples, _) = self.tuple_reader.list(&req.typesystem.tenant_id, filter, None).await?;
 
-        // TODO concurrence
-        // let handlers = tuples
-        tuples.iter().filter_map(|t| {
-            if t.user_type.eq(&req.tuple_key.user_type) || matches!(t.user_relation, None) {
-                return None;
-            }
-            Some(|| {
-                self.resolver.check(CheckRequest {
+        let handlers: Vec<_> = tuples
+            .iter()
+            .filter_map(|t| {
+                if t.user_type.eq(&req.tuple_key.user_type) || matches!(t.user_relation, None) {
+                    return None;
+                }
+                Some(CheckRequest {
                     typesystem: req.typesystem.clone(),
                     tuple_key: TupleKey {
                         user_type: String::from(&t.user_type),
@@ -233,30 +200,33 @@ impl LocalChecker {
                     visited_paths: req.visited_paths.clone(),
                 })
             })
-        });
-        // .collect();
+            .collect();
 
-        // union_check(handlers)
-        todo!()
+        union_check(handlers.len(), |i| self.resolver.check(handlers.get(i).unwrap().to_owned())).await
     }
-    async fn check_set_operation(
-        &self,
-        req: &CheckRequest,
+
+    fn check_set_operation<'a, 'b>(
+        &'a self,
+        req: &'b CheckRequest,
         operator: SetOperator,
-        children: &Vec<Box<Userset>>,
-    ) -> Result<CheckResult> {
-        // let handlers = children
-        //     .iter()
-        //     .map(|rewrite| || self.check_rewrite(&req, rewrite))
-        //     .collect();
-        // match operator {
-        //     SetOperator::Union => union_check(handlers),
-        //     SetOperator::Intersection => intersection_check(handlers),
-        //     SetOperator::Exclusion => exclusion_check(
-        //         handlers.get(0).unwrap().to_owned(),
-        //         handlers.get(1).unwrap().to_owned(),
-        //     ),
-        // }
-        todo!()
+        children: &'b Vec<Box<Userset>>,
+    ) -> BoxFuture<'b, Result<CheckResult>>
+    where
+        'a: 'b,
+    {
+        async move {
+            match operator {
+                SetOperator::Union => union_check(children.len(), |i| self.check_rewrite(&req, children.get(i).unwrap())).await,
+                SetOperator::Intersection => intersection_check(children.len(), |i| self.check_rewrite(&req, children.get(i).unwrap())).await,
+                SetOperator::Exclusion => {
+                    exclusion_check(
+                        self.check_rewrite(&req, children.get(0).unwrap()),
+                        self.check_rewrite(&req, children.get(1).unwrap()),
+                    )
+                    .await
+                }
+            }
+        }
+        .boxed()
     }
 }

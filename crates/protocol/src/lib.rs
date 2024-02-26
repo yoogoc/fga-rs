@@ -77,7 +77,7 @@ pub enum RelationReference {
     Wildcard(String),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct TupleKey {
     pub user_type: String,
     pub user_id: String,

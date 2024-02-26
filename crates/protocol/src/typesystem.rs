@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{error::ModelError, Relation, RelationReference, TupleToUserset, Type};
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct Typesystem {
     // [objectType] => typeDefinition
     pub type_definitions: HashMap<String, Type>,
