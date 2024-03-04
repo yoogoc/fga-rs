@@ -6,13 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = { workspace = true}
-tokio = { workspace = true, features = ["sync", "rt"]}
-thiserror = { workspace = true}
+anyhow = { workspace = true }
+tokio = { workspace = true, features = ["sync", "rt"] }
+thiserror = { workspace = true }
 base64 = { workspace = true }
 async-trait = { workspace = true }
 futures = { workspace = true }
 moka = { workspace = true, features = ["sync"] }
 
-protocol ={ path = "../protocol"}
-storage ={ path = "../storage"}
+protocol = { path = "../protocol" }
+storage = { path = "../storage" }

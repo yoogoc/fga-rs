@@ -6,8 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { workspace = true, features = ["sync", "rt"]}
+tokio = { workspace = true, features = ["sync", "rt"] }
 async-trait = { workspace = true }
 futures = { workspace = true }
 tonic = { workspace = true }
-axum = { workspace = true }
+axum = { workspace = true, features = ["tokio"] }
+anyhow = { workspace = true }

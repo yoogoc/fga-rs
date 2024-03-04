@@ -468,6 +468,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "cli"
+version = "0.1.0"
+
+[[package]]
 name = "const-oid"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -652,10 +656,6 @@ name = "fastrand"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "25cbce373ec4653f1a01a31e8a5e5ec0c622dc27ff9c4e6606eefef5cbbed4a5"
-
-[[package]]
-name = "fga-rs"
-version = "0.1.0"
 
 [[package]]
 name = "finl_unicode"
@@ -2000,6 +2000,7 @@ dependencies = [
 name = "server"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-trait",
  "axum 0.7.4",
  "futures",

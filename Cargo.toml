@@ -1,10 +1,10 @@
-[package]
+[workspace.package]
 name = "fga-rs"
 version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = ["src/protocol", "src/checker", "src/storage", "src/server"]
+members = ["src/protocol", "src/checker", "src/storage", "src/server", "src/cli"]
 
 [workspace.dependencies]
 actix = "0.13.1"
