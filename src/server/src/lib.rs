@@ -1,9 +1,9 @@
+mod error;
 mod grpc;
 mod http;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use futures::{future::try_join_all, join};
 use std::net::SocketAddr;
 
 #[async_trait]
@@ -23,7 +23,9 @@ impl Servers {
     }
 
     pub async fn start(&self) -> Result<()> {
-        futures::future::try_join_all(self.servers.iter().map(start_server)).await.map(|_| ())
+        futures::future::try_join_all(self.servers.iter().map(start_server))
+            .await
+            .map(|_| ())
     }
     pub async fn shutdown(&self) -> Result<()> {
         futures::future::try_join_all(self.servers.iter().map(|s| s.0.shutdown()))
