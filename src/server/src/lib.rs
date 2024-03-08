@@ -1,5 +1,6 @@
 mod error;
 mod grpc;
+pub mod handler;
 mod http;
 
 use anyhow::Result;

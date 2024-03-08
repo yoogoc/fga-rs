@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, PartialEq, Copy)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Copy, Serialize, Deserialize)]
 pub struct ResolutionMetadata {
     pub depth: u32,
     pub datastore_query_count: u32,

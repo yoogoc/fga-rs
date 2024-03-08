@@ -4,11 +4,12 @@ pub mod remote_checker;
 mod stream;
 use async_trait::async_trait;
 use futures::Future;
+use serde::{Deserialize, Serialize};
 
 pub mod error;
 mod graph;
 
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::Arc};
 
 use anyhow::Result;
 use graph::ResolutionMetadata;
@@ -23,7 +24,7 @@ pub struct CheckRequest {
     pub visited_paths: HashSet<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Copy, Serialize, Deserialize)]
 pub struct CheckResult {
     pub allow: bool,
     pub resolution_metadata: ResolutionMetadata,
@@ -52,6 +53,8 @@ pub trait Checker: Send + Sync {
     // call when finish a request
     async fn close(&self);
 }
+
+pub type CheckerRef = Arc<dyn Checker>;
 
 async fn union_check<F>(count: usize, f: impl Fn(usize) -> F) -> Result<CheckResult>
 where

@@ -12,8 +12,8 @@ use sea_orm::{sea_query::all, DbConn};
 use crate::error::StorageError;
 use crate::postgres::tuple::ActiveModel;
 use crate::{
-    AuthzModelReader, AuthzModelWriter, Pagination, RelationshipTupleReader,
-    RelationshipTupleWriter, TenantOperator, TupleFilter,
+    AuthzModelReader, AuthzModelWriter, Pagination, RelationshipTupleReader, RelationshipTupleWriter, TenantOperator,
+    TupleFilter,
 };
 
 #[derive(Debug, Clone)]
@@ -28,15 +28,10 @@ impl RelationshipTupleReader for Storage {
         tenant_id: &str,
         filter: TupleFilter,
         page: Option<Pagination>,
-    ) -> anyhow::Result<(Vec<protocol::Tuple>, u64)> {
-        let conds = all![
-            tuple::Column::TenantId.eq(tenant_id),
-            filter_to_conds(&filter)
-        ];
+    ) -> anyhow::Result<(Vec<protocol::Tuple>, Option<u64>)> {
+        let conds = all![tuple::Column::TenantId.eq(tenant_id), filter_to_conds(&filter)];
         if let Some(page) = page {
-            let query = tuple::Entity::find()
-                .filter(conds)
-                .paginate(&self.pool, page.size);
+            let query = tuple::Entity::find().filter(conds).paginate(&self.pool, page.size);
 
             Ok((
                 query
@@ -45,11 +40,11 @@ impl RelationshipTupleReader for Storage {
                     .iter()
                     .map(|t| t.to_owned().into())
                     .collect(),
-                query.num_pages().await?,
+                Some(query.num_pages().await?),
             ))
         } else {
             let tuples = tuple::Entity::find().filter(conds).all(&self.pool).await?;
-            Ok((tuples.iter().map(|t| t.to_owned().into()).collect(), 0))
+            Ok((tuples.iter().map(|t| t.to_owned().into()).collect(), None))
         }
     }
 }
@@ -66,14 +61,8 @@ impl RelationshipTupleWriter for Storage {
     }
 
     async fn delete(&self, tenant_id: &str, filter: TupleFilter) -> anyhow::Result<()> {
-        let conds = all![
-            tuple::Column::TenantId.eq(tenant_id),
-            filter_to_conds(&filter)
-        ];
-        tuple::Entity::delete_many()
-            .filter(conds)
-            .exec(&self.pool)
-            .await?;
+        let conds = all![tuple::Column::TenantId.eq(tenant_id), filter_to_conds(&filter)];
+        tuple::Entity::delete_many().filter(conds).exec(&self.pool).await?;
         Ok(())
     }
 }
@@ -94,7 +83,7 @@ impl AuthzModelReader for Storage {
         &self,
         tenant_id: String,
         page: Option<Pagination>,
-    ) -> anyhow::Result<(Vec<protocol::AuthzModel>, u64)> {
+    ) -> anyhow::Result<(Vec<protocol::AuthzModel>, Option<u64>)> {
         let conds = tuple::Column::TenantId.eq(tenant_id);
         if let Some(page) = page {
             let query = authz_model::Entity::find()
@@ -108,14 +97,11 @@ impl AuthzModelReader for Storage {
                     .iter()
                     .map(|t| t.to_owned().into())
                     .collect(),
-                query.num_pages().await?,
+                Some(query.num_pages().await?),
             ))
         } else {
-            let tuples = authz_model::Entity::find()
-                .filter(conds)
-                .all(&self.pool)
-                .await?;
-            Ok((tuples.iter().map(|t| t.to_owned().into()).collect(), 0))
+            let tuples = authz_model::Entity::find().filter(conds).all(&self.pool).await?;
+            Ok((tuples.iter().map(|t| t.to_owned().into()).collect(), None))
         }
     }
 }
@@ -161,7 +147,7 @@ impl TenantOperator for Storage {
             .into())
     }
 
-    async fn list(&self, page: Option<Pagination>) -> anyhow::Result<(Vec<protocol::Tenant>, u64)> {
+    async fn list(&self, page: Option<Pagination>) -> anyhow::Result<(Vec<protocol::Tenant>, Option<u64>)> {
         if let Some(page) = page {
             let query = tenant::Entity::find().paginate(&self.pool, page.size);
 
@@ -172,11 +158,11 @@ impl TenantOperator for Storage {
                     .iter()
                     .map(|t| t.to_owned().into())
                     .collect(),
-                query.num_pages().await?,
+                Some(query.num_pages().await?),
             ))
         } else {
             let tuples = tenant::Entity::find().all(&self.pool).await?;
-            Ok((tuples.iter().map(|t| t.to_owned().into()).collect(), 0))
+            Ok((tuples.iter().map(|t| t.to_owned().into()).collect(), None))
         }
     }
 }

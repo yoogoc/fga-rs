@@ -1,16 +1,20 @@
 mod error;
 pub mod postgres;
 
+use std::sync::Arc;
+
 use anyhow::Result;
 use async_trait::async_trait;
 use protocol::{AuthzModel, Tenant, Tuple};
+use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct Pagination {
     pub size: u64,
     pub page: u64,
 }
 
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct TupleFilter {
     pub object_type_eq: Option<String>,
     pub object_id_eq: Option<String>,
@@ -24,40 +28,42 @@ pub struct TupleFilter {
 }
 
 #[async_trait]
-pub trait RelationshipTupleReader {
+pub trait RelationshipTupleReader: Send + Sync {
     async fn list(
         &self,
         tenant_id: &str,
         filter: TupleFilter,
         page: Option<Pagination>,
-    ) -> Result<(Vec<Tuple>, u64)>;
+    ) -> Result<(Vec<Tuple>, Option<u64>)>;
 }
 
 #[async_trait]
-pub trait RelationshipTupleWriter {
+pub trait RelationshipTupleWriter: Send + Sync {
     async fn save(&self, tenant_id: &str, tuples: Vec<Tuple>) -> Result<()>;
     async fn delete(&self, tenant_id: &str, filter: TupleFilter) -> Result<()>;
 }
 
 #[async_trait]
-pub trait AuthzModelReader {
+pub trait AuthzModelReader: Send + Sync {
     async fn get_latest(&self, tenant_id: String) -> Result<AuthzModel>;
-    async fn list(
-        &self,
-        tenant_id: String,
-        page: Option<Pagination>,
-    ) -> Result<(Vec<AuthzModel>, u64)>;
+    async fn list(&self, tenant_id: String, page: Option<Pagination>) -> Result<(Vec<AuthzModel>, Option<u64>)>;
 }
 
 #[async_trait]
-pub trait AuthzModelWriter {
+pub trait AuthzModelWriter: Send + Sync {
     async fn save(&self, tenant_id: String, model: AuthzModel) -> Result<()>;
 }
 
 #[async_trait]
-pub trait TenantOperator {
+pub trait TenantOperator: Send + Sync {
     async fn create(&self, tenant_id: String, name: String) -> Result<()>;
     async fn delete(&self, tenant_id: String) -> Result<()>;
     async fn get(&self, tenant_id: String) -> Result<Tenant>;
-    async fn list(&self, page: Option<Pagination>) -> Result<(Vec<Tenant>, u64)>;
+    async fn list(&self, page: Option<Pagination>) -> Result<(Vec<Tenant>, Option<u64>)>;
 }
+
+pub type RelationshipTupleReaderRef = Arc<dyn RelationshipTupleReader>;
+pub type RelationshipTupleWriterRef = Arc<dyn RelationshipTupleWriter>;
+pub type AuthzModelReaderRef = Arc<dyn AuthzModelReader>;
+pub type AuthzModelWriterRef = Arc<dyn AuthzModelWriter>;
+pub type TenantOperatorRef = Arc<dyn TenantOperator>;

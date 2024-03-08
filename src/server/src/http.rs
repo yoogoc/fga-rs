@@ -1,3 +1,7 @@
+mod authz_model;
+mod tenant;
+mod zanzibar;
+
 use std::{net::SocketAddr, time::Duration};
 
 use futures::FutureExt;
@@ -37,6 +41,7 @@ impl Default for HttpOptions {
 impl HttpServer {
     fn new(options: HttpOptions) -> Self {
         let router = Router::new();
+        // router.
         Self {
             router: StdMutex::new(router),
             shutdown_tx: Mutex::new(None),
