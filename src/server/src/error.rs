@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -8,6 +10,8 @@ use thiserror::Error;
 pub enum ServerError {
     #[error("Server already started: {server}")]
     AlreadyStarted { server: String },
+    #[error("Get lock error")]
+    Locked,
 }
 
 pub struct AppError(anyhow::Error);

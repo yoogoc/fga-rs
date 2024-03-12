@@ -5,7 +5,7 @@ use axum::{
 };
 use protocol::{AuthzModel, Tenant};
 use serde::{Deserialize, Serialize};
-use storage::{AuthzModelReaderRef, AuthzModelWriterRef, Pagination, TenantOperatorRef};
+use storage::{AuthzModelReaderRef, AuthzModelWriterRef, Pagination};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ReadResult {
