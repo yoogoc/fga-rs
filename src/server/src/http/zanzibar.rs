@@ -63,12 +63,14 @@ pub async fn write_delete(
 }
 
 #[axum::debug_handler]
+#[allow(unused)]
 pub async fn watch(Path(tenant_id): Path<String>) -> Result<Json<ReadResult>> {
     unimplemented!()
 }
 
 // define check will fail
 #[axum::debug_handler]
+#[allow(unused)]
 pub async fn check_x(
     State(state): State<CheckerRef>,
     Path(tenant_id): Path<String>,
@@ -85,6 +87,7 @@ pub async fn check_x(
 }
 
 #[axum::debug_handler]
+#[allow(unused)]
 pub async fn expand(
     State(state): State<RelationshipTupleReaderRef>,
     Path(tenant_id): Path<String>,

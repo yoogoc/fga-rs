@@ -28,11 +28,7 @@ impl Typesystem {
             .context(ModelError::NotFoundRelation(String::from(relation)))
     }
 
-    pub fn get_directly_related_usersets(
-        &self,
-        object_type: &str,
-        relation: &str,
-    ) -> Result<Vec<&RelationReference>> {
+    pub fn get_directly_related_usersets(&self, object_type: &str, relation: &str) -> Result<Vec<&RelationReference>> {
         let refs = self.get_directly_related_types(object_type, relation)?;
         Ok(refs
             .iter()
@@ -43,11 +39,7 @@ impl Typesystem {
             })
             .collect())
     }
-    pub fn get_directly_related_types(
-        &self,
-        object_type: &str,
-        relation: &str,
-    ) -> Result<&Vec<RelationReference>> {
+    pub fn get_directly_related_types(&self, object_type: &str, relation: &str) -> Result<&Vec<RelationReference>> {
         Ok(&self
             .get_relation(object_type, relation)?
             .type_info

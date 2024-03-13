@@ -3,8 +3,12 @@ mod grpc;
 mod http;
 
 use anyhow::Result;
-use async_trait::async_trait;
 use std::net::SocketAddr;
+
+#[macro_use]
+extern crate tracing;
+#[macro_use]
+extern crate async_trait;
 
 #[async_trait]
 pub trait Server: Send + Sync {
@@ -27,6 +31,7 @@ impl Servers {
             .await
             .map(|_| ())
     }
+
     pub async fn shutdown(&self) -> Result<()> {
         futures::future::try_join_all(self.servers.iter().map(|s| s.0.shutdown()))
             .await
@@ -36,6 +41,6 @@ impl Servers {
 
 pub async fn start_server(server_and_addr: &(Box<dyn Server>, SocketAddr)) -> Result<Option<SocketAddr>> {
     let (server, addr) = server_and_addr;
-    // info!("Starting {} at {}", server.name(), addr);
+    info!("Starting {} at {}", server.name(), addr);
     server.start(*addr).await.map(Some)
 }

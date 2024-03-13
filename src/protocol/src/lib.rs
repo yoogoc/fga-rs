@@ -34,16 +34,9 @@ pub enum Userset {
     This,
     Computed(ObjectRelation),
     TupleTo(TupleToUserset),
-    Union {
-        children: Vec<Box<Userset>>,
-    },
-    Intersection {
-        children: Vec<Box<Userset>>,
-    },
-    Difference {
-        base: Box<Userset>,
-        subtract: Box<Userset>,
-    },
+    Union { children: Vec<Box<Userset>> },
+    Intersection { children: Vec<Box<Userset>> },
+    Difference { base: Box<Userset>, subtract: Box<Userset> },
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -91,12 +84,7 @@ impl TupleKey {
     pub fn cache_key(&self) -> String {
         format!(
             "{}{}-{}-{}{}{}",
-            &self.object_type,
-            &self.object_id,
-            &self.relation,
-            &self.user_type,
-            &self.user_id,
-            &self.user_relation
+            &self.object_type, &self.object_id, &self.relation, &self.user_type, &self.user_id, &self.user_relation
         )
     }
 }

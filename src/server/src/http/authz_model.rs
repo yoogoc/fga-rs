@@ -49,6 +49,7 @@ pub async fn create(
 }
 
 #[axum::debug_handler]
+#[allow(unused)]
 pub async fn get(
     State(state): State<AuthzModelReaderRef>,
     Path((tenant_id, id)): Path<(String, String)>,

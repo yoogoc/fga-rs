@@ -17,9 +17,6 @@ impl ActiveModelBehavior for ActiveModel {}
 
 impl From<Model> for protocol::Tenant {
     fn from(t: Model) -> protocol::Tenant {
-        protocol::Tenant {
-            id: t.id,
-            name: t.name,
-        }
+        protocol::Tenant { id: t.id, name: t.name }
     }
 }

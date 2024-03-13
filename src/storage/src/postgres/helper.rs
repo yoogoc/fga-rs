@@ -33,9 +33,7 @@ pub fn filter_to_conds(filter: &TupleFilter) -> Condition {
             .add(tuple::Column::UserType.eq(user_type_eq.to_owned()));
     }
     if let Some(user_id_eq) = &filter.user_id_eq {
-        condition
-            .clone()
-            .add(tuple::Column::UserId.eq(user_id_eq.to_owned()));
+        condition.clone().add(tuple::Column::UserId.eq(user_id_eq.to_owned()));
     }
     if let Some(user_id_in) = &filter.user_id_in {
         condition

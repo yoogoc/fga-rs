@@ -4,7 +4,10 @@ use futures::{future::BoxFuture, FutureExt};
 use protocol::{RelationReference, SetOperator, TupleKey, TupleToUserset, Userset, WILDCARD};
 use storage::{RelationshipTupleReader, TupleFilter};
 
-use crate::{error::CheckerError, exclusion_check, graph::ResolutionMetadata, intersection_check, union_check, CheckRequest, CheckResult, Checker};
+use crate::{
+    error::CheckerError, exclusion_check, graph::ResolutionMetadata, intersection_check, union_check, CheckRequest,
+    CheckResult, Checker,
+};
 
 pub struct LocalChecker {
     pub resolver: Box<dyn Checker + 'static>,
@@ -14,7 +17,9 @@ pub struct LocalChecker {
 #[async_trait]
 impl Checker for LocalChecker {
     async fn check(&self, req: CheckRequest) -> Result<CheckResult> {
-        let relation = req.typesystem.get_relation(&req.tuple_key.object_type, &req.tuple_key.relation)?;
+        let relation = req
+            .typesystem
+            .get_relation(&req.tuple_key.object_type, &req.tuple_key.relation)?;
         self.check_rewrite(&req, &relation.rewrite).await
     }
 
@@ -28,10 +33,13 @@ impl LocalChecker {
             Userset::Computed(or) => self.check_computed(req, &or.relation).await,
             Userset::TupleTo(ttu) => self.check_tuple_to(req, ttu).await,
             Userset::Union { children } => self.check_set_operation(req, SetOperator::Union, children).await,
-            Userset::Intersection { children } => self.check_set_operation(req, SetOperator::Intersection, children).await,
+            Userset::Intersection { children } => {
+                self.check_set_operation(req, SetOperator::Intersection, children).await
+            }
             Userset::Difference { base, subtract } => {
                 let children = vec![base.to_owned(), subtract.to_owned()];
-                self.check_set_operation(req, SetOperator::Intersection, &children).await
+                self.check_set_operation(req, SetOperator::Intersection, &children)
+                    .await
             }
         }
     }
@@ -97,7 +105,10 @@ impl LocalChecker {
         let (tuples, _) = self.tuple_reader.list(&req.typesystem.tenant_id, filter, None).await?;
 
         if tuples.is_empty() {
-            return Ok(CheckResult::new_dqc(false, req.resolution_metadata.datastore_query_count + 1));
+            return Ok(CheckResult::new_dqc(
+                false,
+                req.resolution_metadata.datastore_query_count + 1,
+            ));
         }
 
         // TODO concurrence
@@ -143,7 +154,10 @@ impl LocalChecker {
             })
             .collect();
 
-        union_check(handlers.len(), |i| self.resolver.check(handlers.get(i).unwrap().to_owned())).await
+        union_check(handlers.len(), |i| {
+            self.resolver.check(handlers.get(i).unwrap().to_owned())
+        })
+        .await
     }
 
     async fn check_computed(&self, req: &CheckRequest, relation: &str) -> Result<CheckResult> {
@@ -202,7 +216,10 @@ impl LocalChecker {
             })
             .collect();
 
-        union_check(handlers.len(), |i| self.resolver.check(handlers.get(i).unwrap().to_owned())).await
+        union_check(handlers.len(), |i| {
+            self.resolver.check(handlers.get(i).unwrap().to_owned())
+        })
+        .await
     }
 
     fn check_set_operation<'a, 'b>(
@@ -216,8 +233,12 @@ impl LocalChecker {
     {
         async move {
             match operator {
-                SetOperator::Union => union_check(children.len(), |i| self.check_rewrite(&req, children.get(i).unwrap())).await,
-                SetOperator::Intersection => intersection_check(children.len(), |i| self.check_rewrite(&req, children.get(i).unwrap())).await,
+                SetOperator::Union => {
+                    union_check(children.len(), |i| self.check_rewrite(&req, children.get(i).unwrap())).await
+                }
+                SetOperator::Intersection => {
+                    intersection_check(children.len(), |i| self.check_rewrite(&req, children.get(i).unwrap())).await
+                }
                 SetOperator::Exclusion => {
                     exclusion_check(
                         self.check_rewrite(&req, children.get(0).unwrap()),
