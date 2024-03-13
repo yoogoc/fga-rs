@@ -3,10 +3,10 @@ use async_trait::async_trait;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use moka::sync::Cache;
 
-use crate::{CheckRequest, CheckResult, Checker};
+use crate::{CheckRequest, CheckResult, Checker, CheckerRef};
 
 pub struct CacheChecker {
-    delegate: Box<dyn Checker + Send + Sync>,
+    delegate: CheckerRef,
     cache: Cache<String, bool>,
 }
 
@@ -17,7 +17,7 @@ impl Checker for CacheChecker {
         if let Some(allow) = self.cache.get(&key) {
             Ok(CheckResult::new(allow))
         } else {
-            let resp = self.delegate.check(req).await?;
+            let resp = self.delegate.clone().check(req).await?;
             self.cache.insert(key, resp.allow);
             Ok(CheckResult::new(resp.allow))
         }
@@ -29,6 +29,11 @@ impl Checker for CacheChecker {
 }
 
 impl CacheChecker {
+    pub fn new(delegate: CheckerRef) -> Self {
+        let cache = Cache::new(100);
+        Self { delegate, cache }
+    }
+
     fn request_cache_key(&self, req: &CheckRequest) -> String {
         let mut contextual_tuples_cache_key = String::new();
         for tk in req.contextual_tuples.clone() {

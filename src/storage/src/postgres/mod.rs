@@ -3,6 +3,8 @@ mod helper;
 mod tenant;
 mod tuple;
 
+use std::sync::Arc;
+
 use anyhow::Context;
 use async_trait::async_trait;
 use helper::filter_to_conds;
@@ -18,7 +20,13 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub struct Storage {
-    pool: DbConn,
+    pool: Arc<DbConn>,
+}
+
+impl Storage {
+    pub fn new(pool: Arc<DbConn>) -> Self {
+        Self { pool }
+    }
 }
 
 #[async_trait]
@@ -30,8 +38,9 @@ impl RelationshipTupleReader for Storage {
         page: Option<Pagination>,
     ) -> anyhow::Result<(Vec<protocol::Tuple>, Option<u64>)> {
         let conds = all![tuple::Column::TenantId.eq(tenant_id), filter_to_conds(&filter)];
+        let conn = self.pool.clone();
         if let Some(page) = page {
-            let query = tuple::Entity::find().filter(conds).paginate(&self.pool, page.size);
+            let query = tuple::Entity::find().filter(conds).paginate(conn.as_ref(), page.size);
 
             Ok((
                 query
@@ -43,7 +52,7 @@ impl RelationshipTupleReader for Storage {
                 Some(query.num_pages().await?),
             ))
         } else {
-            let tuples = tuple::Entity::find().filter(conds).all(&self.pool).await?;
+            let tuples = tuple::Entity::find().filter(conds).all(conn.as_ref()).await?;
             Ok((tuples.iter().map(|t| t.to_owned().into()).collect(), None))
         }
     }
@@ -56,13 +65,18 @@ impl RelationshipTupleWriter for Storage {
         for t in &mut tuples {
             t.tenant_id = Set(tenant_id.to_owned());
         }
-        tuple::Entity::insert_many(tuples).exec(&self.pool).await?;
+        tuple::Entity::insert_many(tuples)
+            .exec(self.pool.clone().as_ref())
+            .await?;
         Ok(())
     }
 
     async fn delete(&self, tenant_id: &str, filter: TupleFilter) -> anyhow::Result<()> {
         let conds = all![tuple::Column::TenantId.eq(tenant_id), filter_to_conds(&filter)];
-        tuple::Entity::delete_many().filter(conds).exec(&self.pool).await?;
+        tuple::Entity::delete_many()
+            .filter(conds)
+            .exec(self.pool.clone().as_ref())
+            .await?;
         Ok(())
     }
 }
@@ -72,7 +86,7 @@ impl AuthzModelReader for Storage {
     async fn get_latest(&self, tenant_id: String) -> anyhow::Result<protocol::AuthzModel> {
         let model = authz_model::Entity::find()
             .filter(authz_model::Column::TenantId.eq(tenant_id))
-            .one(&self.pool)
+            .one(self.pool.clone().as_ref())
             .await?
             .context(StorageError::NotFoundAuthzModel)?;
 
@@ -85,10 +99,11 @@ impl AuthzModelReader for Storage {
         page: Option<Pagination>,
     ) -> anyhow::Result<(Vec<protocol::AuthzModel>, Option<u64>)> {
         let conds = tuple::Column::TenantId.eq(tenant_id);
+        let conn = self.pool.clone();
         if let Some(page) = page {
             let query = authz_model::Entity::find()
                 .filter(conds)
-                .paginate(&self.pool, page.size);
+                .paginate(conn.as_ref(), page.size);
 
             Ok((
                 query
@@ -100,7 +115,7 @@ impl AuthzModelReader for Storage {
                 Some(query.num_pages().await?),
             ))
         } else {
-            let tuples = authz_model::Entity::find().filter(conds).all(&self.pool).await?;
+            let tuples = authz_model::Entity::find().filter(conds).all(conn.as_ref()).await?;
             Ok((tuples.iter().map(|t| t.to_owned().into()).collect(), None))
         }
     }
@@ -114,7 +129,9 @@ impl AuthzModelWriter for Storage {
             model: Set(model.into()),
             ..Default::default()
         };
-        authz_model::Entity::insert(model).exec(&self.pool).await?;
+        authz_model::Entity::insert(model)
+            .exec(self.pool.clone().as_ref())
+            .await?;
         Ok(())
     }
 }
@@ -127,29 +144,30 @@ impl TenantOperator for Storage {
             name: Set(name),
             ..Default::default()
         };
-        tenant::Entity::insert(model).exec(&self.pool).await?;
+        tenant::Entity::insert(model).exec(self.pool.clone().as_ref()).await?;
         Ok(())
     }
 
     async fn delete(&self, tenant_id: String) -> anyhow::Result<()> {
         tenant::Entity::delete_many()
             .filter(tenant::Column::Id.eq(tenant_id))
-            .exec(&self.pool)
+            .exec(self.pool.clone().as_ref())
             .await?;
         Ok(())
     }
 
     async fn get(&self, tenant_id: String) -> anyhow::Result<protocol::Tenant> {
         Ok(tenant::Entity::find_by_id(tenant_id)
-            .one(&self.pool)
+            .one(self.pool.clone().as_ref())
             .await?
             .context(StorageError::NotFoundTenant)?
             .into())
     }
 
     async fn list(&self, page: Option<Pagination>) -> anyhow::Result<(Vec<protocol::Tenant>, Option<u64>)> {
+        let conn = self.pool.clone();
         if let Some(page) = page {
-            let query = tenant::Entity::find().paginate(&self.pool, page.size);
+            let query = tenant::Entity::find().paginate(conn.as_ref(), page.size);
 
             Ok((
                 query
@@ -161,7 +179,7 @@ impl TenantOperator for Storage {
                 Some(query.num_pages().await?),
             ))
         } else {
-            let tuples = tenant::Entity::find().all(&self.pool).await?;
+            let tuples = tenant::Entity::find().all(conn.as_ref()).await?;
             Ok((tuples.iter().map(|t| t.to_owned().into()).collect(), None))
         }
     }

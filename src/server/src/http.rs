@@ -49,7 +49,7 @@ impl Default for HttpOptions {
 }
 
 impl HttpServer {
-    fn new(
+    pub fn new(
         tuple_reader: RelationshipTupleReaderRef,
         tuple_writer: RelationshipTupleWriterRef,
         authz_model_reader: AuthzModelReaderRef,

@@ -4,6 +4,12 @@ use crate::{CheckRequest, CheckResult, Checker};
 
 pub struct RemoteChecker {}
 
+impl RemoteChecker {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
 #[async_trait]
 impl Checker for RemoteChecker {
     async fn check(&self, req: CheckRequest) -> anyhow::Result<CheckResult> {

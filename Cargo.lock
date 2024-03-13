@@ -2038,6 +2038,7 @@ dependencies = [
  "futures",
  "humantime-serde",
  "protocol",
+ "sea-orm",
  "serde",
  "serde_json",
  "storage",

@@ -15,6 +15,10 @@ use anyhow::Result;
 use graph::ResolutionMetadata;
 use protocol::{TupleKey, Typesystem};
 
+pub use cache_checker::CacheChecker;
+pub use local_checker::LocalChecker;
+pub use remote_checker::RemoteChecker;
+
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CheckRequest {
     pub typesystem: Typesystem,

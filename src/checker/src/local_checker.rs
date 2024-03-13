@@ -2,16 +2,16 @@ use anyhow::Result;
 use async_trait::async_trait;
 use futures::{future::BoxFuture, FutureExt};
 use protocol::{RelationReference, SetOperator, TupleKey, TupleToUserset, Userset, WILDCARD};
-use storage::{RelationshipTupleReader, TupleFilter};
+use storage::{RelationshipTupleReaderRef, TupleFilter};
 
 use crate::{
     error::CheckerError, exclusion_check, graph::ResolutionMetadata, intersection_check, union_check, CheckRequest,
-    CheckResult, Checker,
+    CheckResult, Checker, CheckerRef,
 };
 
 pub struct LocalChecker {
-    pub resolver: Box<dyn Checker + 'static>,
-    pub tuple_reader: Box<dyn RelationshipTupleReader + Send + Sync>,
+    resolver: CheckerRef,
+    tuple_reader: RelationshipTupleReaderRef,
 }
 
 #[async_trait]
@@ -27,6 +27,10 @@ impl Checker for LocalChecker {
 }
 
 impl LocalChecker {
+    pub fn new(resolver: CheckerRef, tuple_reader: RelationshipTupleReaderRef) -> Self {
+        Self { resolver, tuple_reader }
+    }
+
     async fn check_rewrite(&self, req: &CheckRequest, rewrite: &Userset) -> Result<CheckResult> {
         match rewrite {
             Userset::This => self.check_direct(req).await,
@@ -102,7 +106,11 @@ impl LocalChecker {
             filter.or = Some(or_filter);
         }
 
-        let (tuples, _) = self.tuple_reader.list(&req.typesystem.tenant_id, filter, None).await?;
+        let (tuples, _) = self
+            .tuple_reader
+            .clone()
+            .list(&req.typesystem.tenant_id, filter, None)
+            .await?;
 
         if tuples.is_empty() {
             return Ok(CheckResult::new_dqc(
@@ -154,14 +162,13 @@ impl LocalChecker {
             })
             .collect();
 
-        union_check(handlers.len(), |i| {
-            self.resolver.check(handlers.get(i).unwrap().to_owned())
-        })
-        .await
+        let r = self.resolver.clone();
+        union_check(handlers.len(), |i| r.check(handlers.get(i).unwrap().to_owned())).await
     }
 
     async fn check_computed(&self, req: &CheckRequest, relation: &str) -> Result<CheckResult> {
         self.resolver
+            .clone()
             .check(CheckRequest {
                 typesystem: req.typesystem.clone(),
                 tuple_key: TupleKey {
@@ -188,7 +195,11 @@ impl LocalChecker {
             relation_eq: Some(String::from(&ttu.tupleset.relation)),
             ..Default::default()
         };
-        let (tuples, _) = self.tuple_reader.list(&req.typesystem.tenant_id, filter, None).await?;
+        let (tuples, _) = self
+            .tuple_reader
+            .clone()
+            .list(&req.typesystem.tenant_id, filter, None)
+            .await?;
 
         let handlers: Vec<_> = tuples
             .iter()
@@ -216,10 +227,8 @@ impl LocalChecker {
             })
             .collect();
 
-        union_check(handlers.len(), |i| {
-            self.resolver.check(handlers.get(i).unwrap().to_owned())
-        })
-        .await
+        let r = self.resolver.clone();
+        union_check(handlers.len(), |i| r.check(handlers.get(i).unwrap().to_owned())).await
     }
 
     fn check_set_operation<'a, 'b>(

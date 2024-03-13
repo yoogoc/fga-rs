@@ -12,6 +12,8 @@ pub enum ServerError {
     AlreadyStarted { server: String },
     #[error("Get lock error")]
     Locked,
+    #[error("Database connect error")]
+    DatabaseConnect,
 }
 
 pub struct AppError(anyhow::Error);

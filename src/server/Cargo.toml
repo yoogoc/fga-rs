@@ -10,6 +10,7 @@ checker = { path = "../checker"}
 storage = { path = "../storage"}
 protocol = { path = "../protocol"}
 
+sea-orm = { workspace = true, features = ["runtime-tokio", "sqlx-mysql", "sqlx-postgres"]}
 tokio = { workspace = true, features = ["sync", "rt", "signal"] }
 async-trait = { workspace = true }
 futures = { workspace = true }
