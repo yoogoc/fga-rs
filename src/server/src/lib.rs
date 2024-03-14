@@ -23,7 +23,7 @@ pub trait Server: Send + Sync {
 }
 
 pub struct Servers {
-    config: Config,
+    // config: Config,
     servers: Vec<(Box<dyn Server>, SocketAddr)>,
 }
 
@@ -54,7 +54,7 @@ impl Servers {
             );
             servers.push((Box::new(server), http.addr.parse::<SocketAddr>().unwrap()));
         }
-        Self { config, servers }
+        Self { servers }
     }
 
     pub async fn start(&self) -> Result<()> {
