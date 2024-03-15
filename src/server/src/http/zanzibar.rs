@@ -34,11 +34,11 @@ impl From<(Vec<Tuple>, Option<u64>)> for ReadResult {
 pub async fn read(
     State(state): State<RelationshipTupleReaderRef>,
     Path(tenant_id): Path<String>,
-    Query(filter): Query<Option<TupleFilter>>,
-    Query(page): Query<Option<Pagination>>,
+    filter: Option<Query<TupleFilter>>,
+    page: Option<Query<Pagination>>,
 ) -> Result<Json<ReadResult>> {
-    let filter = filter.unwrap_or_default();
-    let result = state.list(&tenant_id, filter, page).await?;
+    let filter = filter.map(|x| x.0).unwrap_or_default();
+    let result = state.list(&tenant_id, filter, page.map(|x| x.0)).await?;
     Ok(Json(result.into()))
 }
 

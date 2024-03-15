@@ -32,9 +32,9 @@ pub struct CreateRequest {
 pub async fn list(
     State(state): State<AuthzModelReaderRef>,
     Path(tenant_id): Path<String>,
-    Query(page): Query<Option<Pagination>>,
+    page: Option<Query<Pagination>>,
 ) -> Result<Json<ReadResult>> {
-    let result = state.list(tenant_id, page).await?;
+    let result = state.list(tenant_id, page.map(|p| p.0)).await?;
     Ok(Json(result.into()))
 }
 

@@ -3,7 +3,7 @@ mod tenant;
 mod zanzibar;
 
 use aide::{
-    axum::{routing as apirouting, ApiRouter, IntoApiResponse},
+    axum::{ApiRouter, IntoApiResponse},
     openapi::{Info, OpenApi, Server as OpenAPIServer},
 };
 use std::{net::SocketAddr, time::Duration};
@@ -125,7 +125,7 @@ impl HttpServer {
                 ..Info::default()
             },
             servers: vec![OpenAPIServer {
-                url: format!("/api/v1"),
+                url: "/api/v1".to_string(),
                 ..OpenAPIServer::default()
             }],
             ..OpenApi::default()

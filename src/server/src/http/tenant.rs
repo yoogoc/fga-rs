@@ -29,11 +29,8 @@ pub struct CreateRequest {
 }
 
 #[axum::debug_handler]
-pub async fn list(
-    State(state): State<TenantOperatorRef>,
-    Query(page): Query<Option<Pagination>>,
-) -> Result<Json<ReadResult>> {
-    let result = state.list(page).await?;
+pub async fn list(State(state): State<TenantOperatorRef>, page: Option<Query<Pagination>>) -> Result<Json<ReadResult>> {
+    let result = state.list(page.map(|x| x.0)).await?;
     Ok(Json(result.into()))
 }
 
