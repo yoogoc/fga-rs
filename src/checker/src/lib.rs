@@ -4,6 +4,7 @@ pub mod remote_checker;
 mod stream;
 use async_trait::async_trait;
 use futures::Future;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 pub mod error;
@@ -28,7 +29,7 @@ pub struct CheckRequest {
     pub visited_paths: HashSet<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Copy, Serialize, Deserialize, JsonSchema)]
 pub struct CheckResult {
     pub allow: bool,
     pub resolution_metadata: ResolutionMetadata,

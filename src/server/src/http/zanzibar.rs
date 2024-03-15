@@ -4,18 +4,19 @@ use axum::{
 };
 use checker::{CheckRequest, CheckResult, CheckerRef};
 use protocol::{Tuple, TupleKey};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use storage::{Pagination, RelationshipTupleReaderRef, RelationshipTupleWriterRef, TupleFilter};
 
 use crate::error::Result;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct ReadResult {
     tuples: Vec<Tuple>,
     total: Option<u32>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct CheckReq {
     tuple_key: TupleKey,
     contextual_tuples: Vec<TupleKey>,

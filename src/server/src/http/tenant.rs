@@ -4,10 +4,11 @@ use axum::{
     Json,
 };
 use protocol::Tenant;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use storage::{Pagination, TenantOperatorRef};
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct ReadResult {
     tenants: Vec<Tenant>,
     total: Option<u32>,
@@ -22,7 +23,7 @@ impl From<(Vec<Tenant>, Option<u64>)> for ReadResult {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct CreateRequest {
     id: String,
     name: String,

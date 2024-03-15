@@ -1,13 +1,11 @@
 use crate::error::Result;
-use axum::{
-    extract::{Path, Query, State},
-    Json,
-};
+use axum::extract::{Json, Path, Query, State};
 use protocol::{AuthzModel, Tenant};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use storage::{AuthzModelReaderRef, AuthzModelWriterRef, Pagination};
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct ReadResult {
     models: Vec<AuthzModel>,
     total: Option<u32>,

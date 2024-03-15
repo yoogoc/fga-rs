@@ -6,15 +6,16 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use protocol::{AuthzModel, Tenant, Tuple};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize, JsonSchema)]
 pub struct Pagination {
     pub size: u64,
     pub page: u64,
 }
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize, JsonSchema)]
 pub struct TupleFilter {
     pub object_type_eq: Option<String>,
     pub object_id_eq: Option<String>,

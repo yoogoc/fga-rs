@@ -24,4 +24,6 @@ humantime-serde = { workspace = true }
 tracing = { workspace = true }
 tower-http = { workspace = true }
 aide = { workspace = true }
+schemars = { workspace = true }
+indexmap = { workspace = true }
 

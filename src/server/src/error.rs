@@ -1,7 +1,12 @@
+use aide::{
+    openapi::{MediaType, Response as AideResponse},
+    OperationOutput,
+};
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
+use indexmap::IndexMap;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -28,8 +33,27 @@ impl IntoResponse for AppError {
     }
 }
 
-// This enables using `?` on functions that return `Result<_, anyhow::Error>` to turn them into
-// `Result<_, AppError>`. That way you don't need to do that manually.
+impl OperationOutput for AppError {
+    type Inner = Self;
+    fn operation_response(
+        _ctx: &mut aide::gen::GenContext,
+        _operation: &mut aide::openapi::Operation,
+    ) -> Option<aide::openapi::Response> {
+        Some(AideResponse {
+            description: "error".into(),
+            content: IndexMap::from_iter([("application/json".into(), MediaType::default())]),
+            ..Default::default()
+        })
+    }
+
+    fn inferred_responses(
+        _ctx: &mut aide::gen::GenContext,
+        _operation: &mut aide::openapi::Operation,
+    ) -> Vec<(Option<u16>, aide::openapi::Response)> {
+        Vec::new()
+    }
+}
+
 impl<E> From<E> for AppError
 where
     E: Into<anyhow::Error>,

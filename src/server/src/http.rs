@@ -3,8 +3,10 @@ mod tenant;
 mod zanzibar;
 
 use aide::{
-    axum::{ApiRouter, IntoApiResponse},
-    openapi::{Info, OpenApi, Server as OpenAPIServer},
+    axum::{routing as apirouting, ApiRouter, IntoApiResponse},
+    openapi::{Info, OpenApi},
+    redoc::Redoc,
+    scalar::Scalar,
 };
 use std::{net::SocketAddr, time::Duration};
 use tower_http::trace::TraceLayer;
@@ -20,10 +22,7 @@ use tokio::sync::oneshot::{self, Sender};
 use crate::{error::ServerError, Server};
 use anyhow::{ensure, Result};
 use async_trait::async_trait;
-use axum::{
-    routing::{delete, get, post},
-    Extension, Json, Router,
-};
+use axum::{routing::get, Extension, Json, Router};
 use tokio::sync::Mutex;
 
 pub struct HttpServer {
@@ -124,55 +123,66 @@ impl HttpServer {
                 version: "v1".to_string(),
                 ..Info::default()
             },
-            servers: vec![OpenAPIServer {
-                url: "/api/v1".to_string(),
-                ..OpenAPIServer::default()
-            }],
             ..OpenApi::default()
         };
 
         let zanzibar_route = ApiRouter::new()
-            .route("/read", get(zanzibar::read).with_state(self.tuple_reader.clone()))
-            .route(
+            .api_route(
+                "/read",
+                apirouting::get(zanzibar::read).with_state(self.tuple_reader.clone()),
+            )
+            .api_route(
                 "/save",
-                post(zanzibar::write_save).with_state(self.tuple_writer.clone()),
+                apirouting::post(zanzibar::write_save).with_state(self.tuple_writer.clone()),
             )
-            .route(
+            .api_route(
                 "/delete",
-                post(zanzibar::write_delete).with_state(self.tuple_writer.clone()),
+                apirouting::post(zanzibar::write_delete).with_state(self.tuple_writer.clone()),
             )
-            .route("/check", post(zanzibar::check_x).with_state(self.checker.clone()))
-            .route("/expand", get(zanzibar::expand).with_state(self.tuple_reader.clone()))
-            .finish_api(&mut api)
-            .layer(Extension(api.clone()));
+            .api_route(
+                "/check",
+                apirouting::post(zanzibar::check_x).with_state(self.checker.clone()),
+            )
+            .api_route(
+                "/expand",
+                apirouting::get(zanzibar::expand).with_state(self.tuple_reader.clone()),
+            );
 
         let authz_model_route = ApiRouter::new()
-            .route(
+            .api_route(
                 "/",
-                post(authz_model::create).with_state(self.authz_model_writer.clone()),
+                apirouting::post(authz_model::create).with_state(self.authz_model_writer.clone()),
             )
-            .route("/", get(authz_model::list).with_state(self.authz_model_reader.clone()))
-            .route(
+            .api_route(
+                "/",
+                apirouting::get(authz_model::list).with_state(self.authz_model_reader.clone()),
+            )
+            .api_route(
                 "/:id",
-                get(authz_model::get).with_state(self.authz_model_reader.clone()),
-            )
-            .finish_api(&mut api)
-            .layer(Extension(api.clone()));
+                apirouting::get(authz_model::get).with_state(self.authz_model_reader.clone()),
+            );
         let tenant_route = ApiRouter::new()
-            .route("/", get(tenant::list))
-            .route("/", post(tenant::create))
-            .route("/:id", get(tenant::get))
-            .route("/:id", delete(tenant::delete))
-            .with_state(self.tenant_operator.clone())
-            .finish_api(&mut api)
-            .layer(Extension(api.clone()));
+            .api_route("/", apirouting::get(tenant::list))
+            .api_route("/", apirouting::post(tenant::create))
+            .api_route("/:id", apirouting::get(tenant::get))
+            .api_route("/:id", apirouting::delete(tenant::delete))
+            .with_state(self.tenant_operator.clone());
 
-        Router::new()
+        ApiRouter::new()
             .nest("/api/v1/zanzibar/:tenant_id", zanzibar_route)
             .nest("/api/v1/authz_models/:tenant_id", authz_model_route)
             .nest("/api/v1/tenants", tenant_route)
             .route("/api/v1/api.json", get(serve_api))
+            .route(
+                "/api/v1/redoc",
+                get(Redoc::new("/api/v1/api.json").with_title("fga-rs").axum_handler()),
+            )
+            .route(
+                "/api/v1/scalar",
+                get(Scalar::new("/api/v1/api.json").with_title("fga-rs").axum_handler()),
+            )
             .layer(TraceLayer::new_for_http())
+            .finish_api(&mut api)
             .layer(Extension(api.clone()))
     }
 }
