@@ -11,7 +11,7 @@ impl Server for GrpcServer {
     async fn shutdown(&self) -> Result<()> {
         todo!()
     }
-    async fn start(&self, listening: SocketAddr) -> Result<SocketAddr> {
+    async fn start(&self, _listening: SocketAddr) -> Result<SocketAddr> {
         todo!()
     }
     fn name(&self) -> &str {

@@ -10,8 +10,8 @@ checker = { path = "../checker"}
 storage = { path = "../storage"}
 protocol = { path = "../protocol"}
 
-sea-orm = { workspace = true, features = ["runtime-tokio", "sqlx-mysql", "sqlx-postgres"]}
-tokio = { workspace = true, features = ["sync", "rt", "signal"] }
+sea-orm = { workspace = true }
+tokio = { workspace = true }
 async-trait = { workspace = true }
 futures = { workspace = true }
 tonic = { workspace = true }
@@ -22,3 +22,6 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 humantime-serde = { workspace = true }
 tracing = { workspace = true }
+tower-http = { workspace = true }
+aide = { workspace = true }
+

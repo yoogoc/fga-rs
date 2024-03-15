@@ -1,21 +1,22 @@
 [workspace.package]
-name = "fga-rs"
+# name = "fga-rs"
 version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = ["src/protocol", "src/checker", "src/storage", "src/server", "src/cli"]
+members = ["src/*"]
+resolver = "2"
 
 [workspace.dependencies]
 actix = "0.13.1"
-clap = "4.4.11"
-env_logger = "0.11.1"
+clap = "4.5.2"
+env_logger = "0.11.3"
 # kube = "0.88.1"
 lazy_static = "1.4.0"
 log = "0.4.20"
 rayon = "1.8.0"
 serde = "1.0.193"
-tokio = "1.34.0"
+tokio = { version = "1.34.0", features = ["full"] }
 tonic = "0.11.0"
 tower = "0.4.13"
 tracing = "0.1.40"
@@ -24,9 +25,16 @@ base64 = "0.22"
 moka = "0.12"
 chrono = "0.4"
 thiserror = "1.0.57"
-sea-orm = "0.12.14"
+sea-orm = { version = "0.12.14", features = [
+  "sqlx-mysql",
+  "sqlx-postgres",
+  "runtime-tokio-rustls",
+] }
 async-trait = "0.1.77"
 serde_json = "1.0.114"
 futures = "0.3.30"
 axum = "0.7.4"
 humantime-serde = "1.1"
+tower-http = { version = "0.5.2", features = ["full"] }
+tracing-subscriber = "0.3.18"
+aide = { version = "0.13.3", features = ["axum"] }

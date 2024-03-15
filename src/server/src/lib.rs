@@ -29,6 +29,7 @@ pub struct Servers {
 
 impl Servers {
     pub async fn new(config: Config) -> Self {
+        info!("init servers");
         let options = ConnectOptions::new(&config.datasource.uri);
         let conn = Database::connect(options).await.unwrap();
         let storage = Arc::new(postgres::Storage::new(Arc::new(conn)));

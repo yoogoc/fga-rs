@@ -2,7 +2,12 @@ mod authz_model;
 mod tenant;
 mod zanzibar;
 
+use aide::{
+    axum::{routing as apirouting, ApiRouter, IntoApiResponse},
+    openapi::{Info, OpenApi, Server as OpenAPIServer},
+};
 use std::{net::SocketAddr, time::Duration};
+use tower_http::trace::TraceLayer;
 
 use checker::CheckerRef;
 use futures::FutureExt;
@@ -17,7 +22,7 @@ use anyhow::{ensure, Result};
 use async_trait::async_trait;
 use axum::{
     routing::{delete, get, post},
-    Router,
+    Extension, Json, Router,
 };
 use tokio::sync::Mutex;
 
@@ -101,7 +106,7 @@ impl Server for HttpServer {
             server
         };
 
-        tokio::spawn(async move { server.await });
+        let _ = server.await?;
 
         Ok(listening)
     }
@@ -112,7 +117,21 @@ impl Server for HttpServer {
 
 impl HttpServer {
     fn make_router(&self) -> Router {
-        let zanzibar_route = Router::new()
+        let mut api = OpenApi {
+            info: Info {
+                title: "FGA-rs HTTP API".to_string(),
+                description: Some("FGA-rs HTTP API".to_string()),
+                version: "v1".to_string(),
+                ..Info::default()
+            },
+            servers: vec![OpenAPIServer {
+                url: format!("/api/v1"),
+                ..OpenAPIServer::default()
+            }],
+            ..OpenApi::default()
+        };
+
+        let zanzibar_route = ApiRouter::new()
             .route("/read", get(zanzibar::read).with_state(self.tuple_reader.clone()))
             .route(
                 "/save",
@@ -123,9 +142,11 @@ impl HttpServer {
                 post(zanzibar::write_delete).with_state(self.tuple_writer.clone()),
             )
             .route("/check", post(zanzibar::check_x).with_state(self.checker.clone()))
-            .route("/expand", get(zanzibar::expand).with_state(self.tuple_reader.clone()));
+            .route("/expand", get(zanzibar::expand).with_state(self.tuple_reader.clone()))
+            .finish_api(&mut api)
+            .layer(Extension(api.clone()));
 
-        let authz_model_route = Router::new()
+        let authz_model_route = ApiRouter::new()
             .route(
                 "/",
                 post(authz_model::create).with_state(self.authz_model_writer.clone()),
@@ -134,17 +155,28 @@ impl HttpServer {
             .route(
                 "/:id",
                 get(authz_model::get).with_state(self.authz_model_reader.clone()),
-            );
-        let tenant_route = Router::new()
+            )
+            .finish_api(&mut api)
+            .layer(Extension(api.clone()));
+        let tenant_route = ApiRouter::new()
             .route("/", get(tenant::list))
             .route("/", post(tenant::create))
             .route("/:id", get(tenant::get))
             .route("/:id", delete(tenant::delete))
-            .with_state(self.tenant_operator.clone());
+            .with_state(self.tenant_operator.clone())
+            .finish_api(&mut api)
+            .layer(Extension(api.clone()));
 
         Router::new()
             .nest("/api/v1/zanzibar/:tenant_id", zanzibar_route)
             .nest("/api/v1/authz_models/:tenant_id", authz_model_route)
             .nest("/api/v1/tenants", tenant_route)
+            .route("/api/v1/api.json", get(serve_api))
+            .layer(TraceLayer::new_for_http())
+            .layer(Extension(api.clone()))
     }
+}
+
+async fn serve_api(Extension(api): Extension<OpenApi>) -> impl IntoApiResponse {
+    Json(api)
 }

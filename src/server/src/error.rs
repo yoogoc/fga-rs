@@ -1,5 +1,4 @@
-use std::fmt::Display;
-
+use aide::{axum::IntoApiResponse, OperationOutput};
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -7,6 +6,7 @@ use axum::{
 use thiserror::Error;
 
 #[derive(Error, Debug)]
+#[allow(unused)]
 pub enum ServerError {
     #[error("Server already started: {server}")]
     AlreadyStarted { server: String },
@@ -26,6 +26,24 @@ impl IntoResponse for AppError {
             format!("Something went wrong: {}", self.0),
         )
             .into_response()
+    }
+}
+
+impl OperationOutput for AppError {
+    type Inner = Self;
+
+    fn operation_response(
+        ctx: &mut aide::gen::GenContext,
+        operation: &mut aide::openapi::Operation,
+    ) -> Option<aide::openapi::Response> {
+        None
+    }
+
+    fn inferred_responses(
+        ctx: &mut aide::gen::GenContext,
+        operation: &mut aide::openapi::Operation,
+    ) -> Vec<(Option<u16>, aide::openapi::Response)> {
+        Vec::new()
     }
 }
 
