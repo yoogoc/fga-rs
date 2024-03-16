@@ -13,14 +13,14 @@ use super::AppError;
 #[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug)]
 #[allow(dead_code)]
-struct SubjectSet<'a> {
-    group: &'a str,
-    role: &'a str,
+pub struct SubjectSet<'a> {
+    pub group: &'a str,
+    pub role: &'a str,
 }
 
 #[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug)]
-enum Associations<'a> {
+pub enum Associations<'a> {
     Single(&'a str),
     SubjectSet(SubjectSet<'a>),
 }
@@ -28,22 +28,22 @@ enum Associations<'a> {
 #[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug)]
 #[allow(dead_code)]
-struct Relation<'a> {
-    name: &'a str,
-    subject: Vec<Associations<'a>>,
+pub struct Relation<'a> {
+    pub name: &'a str,
+    pub subject: Vec<Associations<'a>>,
 }
 
 #[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug)]
 #[allow(dead_code)]
-struct PermissionSet<'a> {
-    group: &'a str,
-    permission: &'a str,
+pub struct PermissionSet<'a> {
+    pub group: &'a str,
+    pub permission: &'a str,
 }
 
 #[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug)]
-enum Permissions<'a> {
+pub enum Permissions<'a> {
     Single(&'a str),
     PermissionSet(PermissionSet<'a>),
 }
@@ -51,25 +51,25 @@ enum Permissions<'a> {
 #[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug)]
 #[allow(dead_code)]
-struct Permission<'a> {
-    name: &'a str,
-    permissions: Vec<Permissions<'a>>,
+pub struct Permission<'a> {
+    pub name: &'a str,
+    pub permissions: Vec<Permissions<'a>>,
 }
 
 #[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug)]
 #[allow(dead_code)]
-struct Definition<'a> {
-    name: &'a str,
-    relations: Vec<Relation<'a>>,
-    permissions: Vec<Permission<'a>>,
+pub struct Definition<'a> {
+    pub name: &'a str,
+    pub relations: Vec<Relation<'a>>,
+    pub permissions: Vec<Permission<'a>>,
 }
 
 #[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct Schema<'a> {
-    definitions: Vec<Definition<'a>>,
+    pub definitions: Vec<Definition<'a>>,
 }
 
 fn parse_identifier(input: &str) -> IResult<&str, &str> {
@@ -534,7 +534,7 @@ mod tests {
         schema {
             query: Query
         }
-        
+
         type Query {
             hello: String
         }

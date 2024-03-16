@@ -12,9 +12,9 @@ name = "schema_parser"
 path = "src/bin/schema_parser.rs"
 
 [dependencies]
-nom = "7.1.3"
-thiserror = "1.0.58"
+nom = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
-criterion = { version = "0.5.1", features = ["html_reports"] }
-quaternion = "1.0.0"
+criterion = { workspace = true }
+quaternion = { workspace = true }
