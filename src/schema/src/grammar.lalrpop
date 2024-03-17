@@ -1,0 +1,77 @@
+use crate::{ token::Token, lexer::LexicalError, ast::* };
+
+grammar<'input>(input: &'input str);
+
+pub Schema: Schema = {
+  SchemaUnit* => Schema::new(<>)
+}
+
+SchemaUnit: SchemaUnit = {
+  <t: Type> => SchemaUnit::Type(t),
+  <su: SchemaUnit> "\n" => su
+}
+
+Type: Type = {
+  <l:@L> "type" <n:identifier> "{" <rops:IRelationOrPermissions> "}" <r:@R> => Type::new(n.to_string(), rops),
+  <l:@L> "type" <n:identifier> "{" "}" <r:@R> => Type::new(n.to_string(), vec![]),
+  <l:@L> "type" <n:identifier> <r:@R> => Type::new(n.to_string(), vec![]),
+}
+
+IRelationOrPermissions: Vec<RelationOrPermission> = {
+  "\n"? <s1:IRelationOrPermission> <s2:("\n" IRelationOrPermission)*> "\n"? => {
+    let mut rsss = vec![s1];
+    rsss.extend(s2.into_iter().map(|e| e.1));
+    rsss
+  }
+}
+
+IRelationOrPermission: RelationOrPermission = {
+  Relation => RelationOrPermission::Relation(<>),
+  // TODO permission
+}
+
+Relation: Relation = {
+  "relation" <n:identifier> ":" <rsss:RelationshipSets> => Relation {
+    name: n.to_string(),
+    subjects: rsss,
+  },
+}
+
+RelationshipSets: Vec<RelationshipSet> = {
+  <s1:RRelationshipSet> <s2:("|" RRelationshipSet)*> => {
+    let mut rsss = vec![s1];
+    rsss.extend(s2.into_iter().map(|e| e.1));
+    rsss
+  }
+}
+
+RRelationshipSet: RelationshipSet = {
+  <n:identifier> => RelationshipSet::Single(n.to_string()),
+  <n:identifier> "#" <r:identifier> => RelationshipSet::Set(n.to_string(), r.to_string())
+}
+
+extern {
+    type Location = usize;
+    type Error = LexicalError;
+
+    enum Token<'input> {
+        identifier => Token::Identifier(<&'input str>),
+        "{" => Token::LBrace,
+        "}" => Token::RBrace,
+        "type" => Token::Type,
+        "relation" => Token::Relation,
+        "rermission" => Token::Permission,
+        "cond" => Token::Cond,
+        ":" => Token::Colon,
+        "(" => Token::LBracket,
+        ")" => Token::RBracket,
+        "^" => Token::Caret,
+        "&" => Token::And,
+        "|" => Token::Or,
+        "+" => Token::Add,
+        "-" => Token::Sub,
+        "->" => Token::YulArrow,
+        "#" => Token::Sharp,
+        "\n" => Token::Newline,
+    }
+}

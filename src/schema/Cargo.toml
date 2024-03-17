@@ -3,17 +3,15 @@ name = "schema"
 version = "0.1.0"
 edition = "2021"
 
-[[bench]]
-name = "schema_parser_benchmark"
-harness = false
-
-[[bin]]
-name = "schema_parser"
-path = "src/bin/schema_parser.rs"
-
 [dependencies]
-nom = { workspace = true }
 thiserror = { workspace = true }
+lalrpop-util = { workspace = true }
+itertools = { workspace = true }
+unicode-xid = { workspace = true }
+phf = { workspace = true }
+
+[build-dependencies]
+lalrpop = { workspace = true }
 
 [dev-dependencies]
 criterion = { workspace = true }
