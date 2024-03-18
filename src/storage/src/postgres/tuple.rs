@@ -1,3 +1,4 @@
+use chrono::Utc;
 use sea_orm::{entity::prelude::*, Set};
 use serde::{Deserialize, Serialize};
 
@@ -13,6 +14,7 @@ pub struct Model {
     pub relation: String,
     pub object_type: String,
     pub object_id: String,
+    #[sea_orm(default_expr = "Utc::now().naive_utc()")]
     pub created_at: ChronoDateTime,
 }
 
@@ -43,6 +45,7 @@ impl From<protocol::Tuple> for ActiveModel {
             relation: Set(t.relation),
             object_type: Set(t.object_type),
             object_id: Set(t.object_id),
+            created_at: Set(Utc::now().naive_utc()),
             ..Default::default()
         }
     }

@@ -118,8 +118,8 @@ impl HttpServer {
     fn make_router(&self) -> Router {
         let mut api = OpenApi {
             info: Info {
-                title: "FGA-rs HTTP API".to_string(),
-                description: Some("FGA-rs HTTP API".to_string()),
+                title: "fga-rs HTTP API".to_string(),
+                description: Some("fga-rs HTTP API".to_string()),
                 version: "v1".to_string(),
                 ..Info::default()
             },
@@ -128,50 +128,50 @@ impl HttpServer {
 
         let zanzibar_route = ApiRouter::new()
             .api_route(
-                "/read",
+                "/zanzibar/:tenant_id/read",
                 apirouting::get(zanzibar::read).with_state(self.tuple_reader.clone()),
             )
             .api_route(
-                "/save",
+                "/zanzibar/:tenant_id/save",
                 apirouting::post(zanzibar::write_save).with_state(self.tuple_writer.clone()),
             )
             .api_route(
-                "/delete",
+                "/zanzibar/:tenant_id/delete",
                 apirouting::post(zanzibar::write_delete).with_state(self.tuple_writer.clone()),
             )
             .api_route(
-                "/check",
+                "/zanzibar/:tenant_id/check",
                 apirouting::post(zanzibar::check_x).with_state(self.checker.clone()),
             )
             .api_route(
-                "/expand",
+                "/zanzibar/:tenant_id/expand",
                 apirouting::get(zanzibar::expand).with_state(self.tuple_reader.clone()),
             );
 
         let authz_model_route = ApiRouter::new()
             .api_route(
-                "/",
+                "/authz_models/:tenant_id",
                 apirouting::post(authz_model::create).with_state(self.authz_model_writer.clone()),
             )
             .api_route(
-                "/",
+                "/authz_models/:tenant_id",
                 apirouting::get(authz_model::list).with_state(self.authz_model_reader.clone()),
             )
             .api_route(
-                "/:id",
+                "/authz_models/:tenant_id/:id",
                 apirouting::get(authz_model::get).with_state(self.authz_model_reader.clone()),
             );
         let tenant_route = ApiRouter::new()
-            .api_route("/", apirouting::get(tenant::list))
-            .api_route("/", apirouting::post(tenant::create))
-            .api_route("/:id", apirouting::get(tenant::get))
-            .api_route("/:id", apirouting::delete(tenant::delete))
+            .api_route("/tenants", apirouting::get(tenant::list))
+            .api_route("/tenants", apirouting::post(tenant::create))
+            .api_route("/tenants/:id", apirouting::get(tenant::get))
+            .api_route("/tenants/:id", apirouting::delete(tenant::delete))
             .with_state(self.tenant_operator.clone());
 
         ApiRouter::new()
-            .nest("/api/v1/zanzibar/:tenant_id", zanzibar_route)
-            .nest("/api/v1/authz_models/:tenant_id", authz_model_route)
-            .nest("/api/v1/tenants", tenant_route)
+            .nest("/api/v1", zanzibar_route)
+            .nest("/api/v1", authz_model_route)
+            .nest("/api/v1", tenant_route)
             .route("/api/v1/api.json", get(serve_api))
             .route(
                 "/api/v1/redoc",

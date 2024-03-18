@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use async_trait::async_trait;
+use chrono::Utc;
 use helper::filter_to_conds;
 use sea_orm::*;
 use sea_orm::{sea_query::all, DbConn};
@@ -44,7 +45,7 @@ impl RelationshipTupleReader for Storage {
 
             Ok((
                 query
-                    .fetch_page(page.page)
+                    .fetch_page(page.page - 1)
                     .await?
                     .iter()
                     .map(|t| t.to_owned().into())
@@ -107,7 +108,7 @@ impl AuthzModelReader for Storage {
 
             Ok((
                 query
-                    .fetch_page(page.page)
+                    .fetch_page(page.page - 1)
                     .await?
                     .iter()
                     .map(|t| t.to_owned().into())
@@ -127,6 +128,7 @@ impl AuthzModelWriter for Storage {
         let model = authz_model::ActiveModel {
             tenant_id: Set(tenant_id),
             model: Set(model.into()),
+            created_at: Set(Utc::now().naive_utc()),
             ..Default::default()
         };
         authz_model::Entity::insert(model)
@@ -142,6 +144,7 @@ impl TenantOperator for Storage {
         let model = tenant::ActiveModel {
             id: Set(tenant_id),
             name: Set(name),
+            created_at: Set(Utc::now().naive_utc()),
             ..Default::default()
         };
         tenant::Entity::insert(model).exec(self.pool.clone().as_ref()).await?;
@@ -171,7 +174,7 @@ impl TenantOperator for Storage {
 
             Ok((
                 query
-                    .fetch_page(page.page)
+                    .fetch_page(page.page - 1)
                     .await?
                     .iter()
                     .map(|t| t.to_owned().into())

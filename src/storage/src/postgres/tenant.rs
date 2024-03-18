@@ -1,3 +1,4 @@
+use chrono::Utc;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -7,6 +8,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String,
     pub name: String,
+    #[sea_orm(default_expr = "Utc::now().naive_utc()")]
     pub created_at: ChronoDateTime,
 }
 
