@@ -9,10 +9,12 @@
         "datasource",
         "fgars",
         "humantime",
+        "itertools",
         "moka",
         "Redoc",
         "tupleset",
         "Typesystem",
+        "Unrecognised",
         "Userset",
         "usersets"
     ],
