@@ -106,11 +106,7 @@ impl LocalChecker {
             filter.or = Some(or_filter);
         }
 
-        let (tuples, _) = self
-            .tuple_reader
-            .clone()
-            .list(&req.typesystem.tenant_id, filter, None)
-            .await?;
+        let (tuples, _) = self.tuple_reader.clone().list(&req.tenant_id, filter, None).await?;
 
         if tuples.is_empty() {
             return Ok(CheckResult::new_dqc(
@@ -144,6 +140,8 @@ impl LocalChecker {
             .iter()
             .filter(|t| !(t.user_type.eq(&req.tuple_key.user_type) || matches!(t.user_relation, None)))
             .map(move |t| CheckRequest {
+                tenant_id: req.tenant_id,
+                model_id: req.model_id,
                 typesystem: req.typesystem.clone(),
                 tuple_key: TupleKey {
                     user_type: String::from(&req.tuple_key.user_type),
@@ -170,6 +168,8 @@ impl LocalChecker {
         self.resolver
             .clone()
             .check(CheckRequest {
+                tenant_id: req.tenant_id,
+                model_id: req.model_id,
                 typesystem: req.typesystem.clone(),
                 tuple_key: TupleKey {
                     user_type: String::from(&req.tuple_key.user_type),
@@ -195,11 +195,7 @@ impl LocalChecker {
             relation_eq: Some(String::from(&ttu.tupleset.relation)),
             ..Default::default()
         };
-        let (tuples, _) = self
-            .tuple_reader
-            .clone()
-            .list(&req.typesystem.tenant_id, filter, None)
-            .await?;
+        let (tuples, _) = self.tuple_reader.clone().list(&req.tenant_id, filter, None).await?;
 
         let handlers: Vec<_> = tuples
             .iter()
@@ -208,6 +204,8 @@ impl LocalChecker {
                     return None;
                 }
                 Some(CheckRequest {
+                    tenant_id: req.tenant_id,
+                    model_id: req.model_id,
                     typesystem: req.typesystem.clone(),
                     tuple_key: TupleKey {
                         user_type: String::from(&t.user_type),

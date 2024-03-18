@@ -1,18 +1,19 @@
-use crate::error::Result;
+use crate::error::{Result, ServerError};
 use axum::extract::{Json, Path, Query, State};
-use protocol::{AuthzModel, Tenant};
+use protocol::Tenant;
+use schema::Schema;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use storage::{AuthzModelReaderRef, AuthzModelWriterRef, Pagination};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct ReadResult {
-    models: Vec<AuthzModel>,
+    models: Vec<Schema>,
     total: Option<u32>,
 }
 
-impl From<(Vec<AuthzModel>, Option<u64>)> for ReadResult {
-    fn from(t: (Vec<AuthzModel>, Option<u64>)) -> Self {
+impl From<(Vec<Schema>, Option<u64>)> for ReadResult {
+    fn from(t: (Vec<Schema>, Option<u64>)) -> Self {
         Self {
             models: t.0,
             total: t.1.map(|x| x as u32),
@@ -20,10 +21,9 @@ impl From<(Vec<AuthzModel>, Option<u64>)> for ReadResult {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct CreateRequest {
-    id: String,
-    name: String,
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
+pub struct CreateByDslRequest {
+    dsl: String,
 }
 
 #[axum::debug_handler]
@@ -40,9 +40,23 @@ pub async fn list(
 pub async fn create(
     State(state): State<AuthzModelWriterRef>,
     Path(tenant_id): Path<String>,
-    Json(cr): Json<AuthzModel>,
+    Json(cr): Json<Schema>,
 ) -> Result<Json<()>> {
     let _ = state.save(tenant_id, cr).await?;
+    Ok(Json(()))
+}
+
+#[axum::debug_handler]
+pub async fn create_by_dsl(
+    State(state): State<AuthzModelWriterRef>,
+    Path(tenant_id): Path<String>,
+    Json(cr): Json<CreateByDslRequest>,
+) -> Result<Json<()>> {
+    let cr = schema::parse(&cr.dsl).map_err(|e| {
+        error!("{:?}", e);
+        return ServerError::ParserError;
+    })?;
+    let _ = state.save(tenant_id, cr.0).await?;
     Ok(Json(()))
 }
 

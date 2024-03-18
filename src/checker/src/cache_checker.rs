@@ -42,8 +42,8 @@ impl CacheChecker {
         }
         STANDARD.encode(format!(
             "{}/{}/{}{}",
-            req.typesystem.tenant_id,
-            req.typesystem.model_id,
+            req.tenant_id,
+            req.model_id,
             req.tuple_key.cache_key(),
             contextual_tuples_cache_key
         ))

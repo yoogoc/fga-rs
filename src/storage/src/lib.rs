@@ -5,7 +5,8 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use protocol::{AuthzModel, Tenant, Tuple};
+use protocol::{Tenant, Tuple};
+use schema::Schema;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -46,13 +47,13 @@ pub trait RelationshipTupleWriter: Send + Sync {
 
 #[async_trait]
 pub trait AuthzModelReader: Send + Sync {
-    async fn get_latest(&self, tenant_id: String) -> Result<AuthzModel>;
-    async fn list(&self, tenant_id: String, page: Option<Pagination>) -> Result<(Vec<AuthzModel>, Option<u64>)>;
+    async fn get_latest(&self, tenant_id: String) -> Result<Schema>;
+    async fn list(&self, tenant_id: String, page: Option<Pagination>) -> Result<(Vec<Schema>, Option<u64>)>;
 }
 
 #[async_trait]
 pub trait AuthzModelWriter: Send + Sync {
-    async fn save(&self, tenant_id: String, model: AuthzModel) -> Result<()>;
+    async fn save(&self, tenant_id: String, model: Schema) -> Result<()>;
 }
 
 #[async_trait]

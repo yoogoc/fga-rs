@@ -4,11 +4,17 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+protocol = { path = "../protocol" }
+
 thiserror = { workspace = true }
 lalrpop-util = { workspace = true }
 itertools = { workspace = true }
 unicode-xid = { workspace = true }
 phf = { workspace = true }
+sea-orm = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+schemars = { workspace = true }
 
 [build-dependencies]
 lalrpop = { workspace = true }

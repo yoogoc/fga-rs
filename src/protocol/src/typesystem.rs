@@ -1,29 +1,21 @@
 use std::collections::HashMap;
 
-use anyhow::{Context, Ok, Result};
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::{error::ModelError, Relation, RelationReference, TupleToUserset, Type};
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
-pub struct Typesystem {
-    // [objectType] => typeDefinition
-    pub type_definitions: HashMap<String, Type>,
-    // [objectType] => [relationName] => relation
-    pub relations: HashMap<String, HashMap<String, Relation>>,
-    // [objectType] => [relationName] => TTU relation
-    pub ttu_relations: HashMap<String, HashMap<String, TupleToUserset>>,
-
-    pub tenant_id: String,
-    pub model_id: String,
-    pub schema_version: String,
-}
+pub type TypeSet = (Type, HashMap<String, Relation>, HashMap<String, TupleToUserset>);
+// [objectType] => (typeDefinition, [relationName] => relation, [relationName] => TTU relation)
+#[derive(Deserialize, Serialize, Clone)]
+pub struct Typesystem(pub HashMap<String, TypeSet>);
 
 impl Typesystem {
     pub fn get_relation(&self, object_type: &str, relation: &str) -> Result<&Relation> {
-        self.relations
+        self.0
             .get(object_type)
             .ok_or(ModelError::NotFoundRelations(String::from(object_type)))?
+            .1
             .get(relation)
             .context(ModelError::NotFoundRelation(String::from(relation)))
     }

@@ -1,6 +1,11 @@
 use std::vec;
 
-#[derive(Debug, PartialEq)]
+use protocol::Typesystem;
+use schemars::JsonSchema;
+use sea_orm::FromJsonQueryResult;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, PartialEq, Clone, FromJsonQueryResult, Deserialize, Serialize, Default, JsonSchema)]
 pub struct Schema {
     pub types: Vec<Type>,
     // pub conds: Vec<Condition>,
@@ -16,6 +21,16 @@ impl Schema {
         }
         Self { types: ts }
     }
+
+    pub fn to_typesystem(self) -> Typesystem {
+        // let mut ts = HashMap::new();
+        // for typ in self.types {
+        //     ts.insert(typ.name, typ.into());
+        // }
+
+        // Typesystem(ts)
+        todo!()
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -23,7 +38,7 @@ pub enum SchemaUnit {
     Type(Type),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, FromJsonQueryResult, Deserialize, Serialize, JsonSchema)]
 pub struct Type {
     pub name: String,
     pub relations: Vec<Relation>,
@@ -48,27 +63,25 @@ impl Type {
     }
 }
 
-pub type Suite<T> = Vec<T>;
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum RelationOrPermission {
     Relation(Relation),
     Permission(Permission),
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, FromJsonQueryResult, Deserialize, Serialize, JsonSchema)]
 pub struct Relation {
     pub name: String,
     pub subjects: Vec<RelationshipSet>,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, FromJsonQueryResult, Deserialize, Serialize, JsonSchema)]
 pub struct Permission {
     pub name: String,
     pub permissions: Vec<Relationship>,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, FromJsonQueryResult, Deserialize, Serialize, JsonSchema)]
 pub enum Relationship {
     Set(RelationshipSet),
     Union {
@@ -83,7 +96,7 @@ pub enum Relationship {
     },
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, FromJsonQueryResult, Deserialize, Serialize, JsonSchema)]
 pub enum RelationshipSet {
     Single(String),
     Set(String, String),

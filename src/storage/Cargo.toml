@@ -16,3 +16,4 @@ serde_json = { workspace = true }
 schemars = { workspace = true }
 
 protocol = { path = "../protocol" }
+schema = { path = "../schema" }

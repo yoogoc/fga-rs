@@ -22,6 +22,9 @@ pub use remote_checker::RemoteChecker;
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CheckRequest {
+    pub tenant_id: String,
+    pub model_id: String,
+
     pub typesystem: Typesystem,
     pub tuple_key: TupleKey,
     pub contextual_tuples: Vec<TupleKey>,

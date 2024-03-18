@@ -9,6 +9,7 @@ edition = "2021"
 checker = { path = "../checker"}
 storage = { path = "../storage"}
 protocol = { path = "../protocol"}
+schema = { path = "../schema"}
 
 sea-orm = { workspace = true }
 tokio = { workspace = true }

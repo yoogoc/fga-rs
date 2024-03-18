@@ -18,6 +18,8 @@ pub enum ServerError {
     Locked,
     #[error("Database connect error")]
     DatabaseConnect,
+    #[error("parser dsl error")]
+    ParserError,
 }
 
 pub struct AppError(anyhow::Error);

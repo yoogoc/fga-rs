@@ -154,6 +154,10 @@ impl HttpServer {
                 apirouting::post(authz_model::create).with_state(self.authz_model_writer.clone()),
             )
             .api_route(
+                "/authz_models/:tenant_id/dsl",
+                apirouting::post(authz_model::create_by_dsl).with_state(self.authz_model_writer.clone()),
+            )
+            .api_route(
                 "/authz_models/:tenant_id",
                 apirouting::get(authz_model::list).with_state(self.authz_model_reader.clone()),
             )

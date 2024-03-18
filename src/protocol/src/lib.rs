@@ -7,21 +7,9 @@ use std::collections::HashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 pub use tuple::Tuple;
-pub use typesystem::Typesystem;
+pub use typesystem::*;
 
 pub const WILDCARD: &str = "*";
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
-pub struct AuthzModel {
-    pub types: Vec<Type>,
-}
-
-impl Into<serde_json::Value> for AuthzModel {
-    fn into(self) -> serde_json::Value {
-        // TODO
-        serde_json::Value::Null
-    }
-}
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct Type {

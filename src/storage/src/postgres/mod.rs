@@ -5,6 +5,7 @@ mod tuple;
 
 use std::sync::Arc;
 
+use ::schema::Schema as AuthzModel;
 use anyhow::Context;
 use async_trait::async_trait;
 use chrono::Utc;
@@ -84,21 +85,21 @@ impl RelationshipTupleWriter for Storage {
 
 #[async_trait]
 impl AuthzModelReader for Storage {
-    async fn get_latest(&self, tenant_id: String) -> anyhow::Result<protocol::AuthzModel> {
+    async fn get_latest(&self, tenant_id: String) -> anyhow::Result<AuthzModel> {
         let model = authz_model::Entity::find()
             .filter(authz_model::Column::TenantId.eq(tenant_id))
             .one(self.pool.clone().as_ref())
             .await?
             .context(StorageError::NotFoundAuthzModel)?;
 
-        Ok(model.into())
+        Ok(model.model)
     }
 
     async fn list(
         &self,
         tenant_id: String,
         page: Option<Pagination>,
-    ) -> anyhow::Result<(Vec<protocol::AuthzModel>, Option<u64>)> {
+    ) -> anyhow::Result<(Vec<AuthzModel>, Option<u64>)> {
         let conds = tuple::Column::TenantId.eq(tenant_id);
         let conn = self.pool.clone();
         if let Some(page) = page {
@@ -111,23 +112,23 @@ impl AuthzModelReader for Storage {
                     .fetch_page(page.page - 1)
                     .await?
                     .iter()
-                    .map(|t| t.to_owned().into())
+                    .map(|t| t.model.to_owned())
                     .collect(),
                 Some(query.num_pages().await?),
             ))
         } else {
-            let tuples = authz_model::Entity::find().filter(conds).all(conn.as_ref()).await?;
-            Ok((tuples.iter().map(|t| t.to_owned().into()).collect(), None))
+            let list = authz_model::Entity::find().filter(conds).all(conn.as_ref()).await?;
+            Ok((list.iter().map(|t| t.model.to_owned()).collect(), None))
         }
     }
 }
 
 #[async_trait]
 impl AuthzModelWriter for Storage {
-    async fn save(&self, tenant_id: String, model: protocol::AuthzModel) -> anyhow::Result<()> {
+    async fn save(&self, tenant_id: String, model: AuthzModel) -> anyhow::Result<()> {
         let model = authz_model::ActiveModel {
             tenant_id: Set(tenant_id),
-            model: Set(model.into()),
+            model: Set(model),
             created_at: Set(Utc::now().naive_utc()),
             ..Default::default()
         };
