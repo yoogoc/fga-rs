@@ -18,10 +18,3 @@ pub struct Model {
 pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}
-
-impl From<Model> for protocol::AuthzModel {
-    // TODO
-    fn from(_t: Model) -> protocol::AuthzModel {
-        protocol::AuthzModel { types: vec![] }
-    }
-}

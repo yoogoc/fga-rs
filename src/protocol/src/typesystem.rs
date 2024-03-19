@@ -7,7 +7,7 @@ use crate::{error::ModelError, Relation, RelationReference, TupleToUserset, Type
 
 pub type TypeSet = (Type, HashMap<String, Relation>, HashMap<String, TupleToUserset>);
 // [objectType] => (typeDefinition, [relationName] => relation, [relationName] => TTU relation)
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Default)]
 pub struct Typesystem(pub HashMap<String, TypeSet>);
 
 impl Typesystem {

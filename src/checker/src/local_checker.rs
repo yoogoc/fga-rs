@@ -140,8 +140,8 @@ impl LocalChecker {
             .iter()
             .filter(|t| !(t.user_type.eq(&req.tuple_key.user_type) || matches!(t.user_relation, None)))
             .map(move |t| CheckRequest {
-                tenant_id: req.tenant_id,
-                model_id: req.model_id,
+                tenant_id: req.tenant_id.to_owned(),
+                model_id: req.model_id.to_owned(),
                 typesystem: req.typesystem.clone(),
                 tuple_key: TupleKey {
                     user_type: String::from(&req.tuple_key.user_type),
@@ -168,8 +168,8 @@ impl LocalChecker {
         self.resolver
             .clone()
             .check(CheckRequest {
-                tenant_id: req.tenant_id,
-                model_id: req.model_id,
+                tenant_id: req.tenant_id.to_owned(),
+                model_id: req.model_id.to_owned(),
                 typesystem: req.typesystem.clone(),
                 tuple_key: TupleKey {
                     user_type: String::from(&req.tuple_key.user_type),
@@ -204,8 +204,8 @@ impl LocalChecker {
                     return None;
                 }
                 Some(CheckRequest {
-                    tenant_id: req.tenant_id,
-                    model_id: req.model_id,
+                    tenant_id: req.tenant_id.to_owned(),
+                    model_id: req.model_id.to_owned(),
                     typesystem: req.typesystem.clone(),
                     tuple_key: TupleKey {
                         user_type: String::from(&t.user_type),
