@@ -85,22 +85,33 @@ impl RelationshipTupleWriter for Storage {
 
 #[async_trait]
 impl AuthzModelReader for Storage {
-    async fn get_latest(&self, tenant_id: String) -> anyhow::Result<AuthzModel> {
+    async fn get_latest(&self, tenant_id: String) -> anyhow::Result<(String, AuthzModel)> {
         let model = authz_model::Entity::find()
             .filter(authz_model::Column::TenantId.eq(tenant_id))
             .one(self.pool.clone().as_ref())
             .await?
             .context(StorageError::NotFoundAuthzModel)?;
 
-        Ok(model.model)
+        Ok((model.id.to_string(), model.model))
+    }
+
+    async fn get(&self, tenant_id: String, id: String) -> anyhow::Result<(String, AuthzModel)> {
+        let model = authz_model::Entity::find()
+            .filter(authz_model::Column::TenantId.eq(tenant_id))
+            .filter(authz_model::Column::Id.eq(id))
+            .one(self.pool.clone().as_ref())
+            .await?
+            .context(StorageError::NotFoundAuthzModel)?;
+
+        Ok((model.id.to_string(), model.model))
     }
 
     async fn list(
         &self,
         tenant_id: String,
         page: Option<Pagination>,
-    ) -> anyhow::Result<(Vec<AuthzModel>, Option<u64>)> {
-        let conds = tuple::Column::TenantId.eq(tenant_id);
+    ) -> anyhow::Result<(Vec<(String, AuthzModel)>, Option<u64>)> {
+        let conds = authz_model::Column::TenantId.eq(tenant_id);
         let conn = self.pool.clone();
         if let Some(page) = page {
             let query = authz_model::Entity::find()
@@ -112,13 +123,16 @@ impl AuthzModelReader for Storage {
                     .fetch_page(page.page - 1)
                     .await?
                     .iter()
-                    .map(|t| t.model.to_owned())
+                    .map(|t| (t.id.to_string(), t.model.to_owned()))
                     .collect(),
                 Some(query.num_pages().await?),
             ))
         } else {
             let list = authz_model::Entity::find().filter(conds).all(conn.as_ref()).await?;
-            Ok((list.iter().map(|t| t.model.to_owned()).collect(), None))
+            Ok((
+                list.iter().map(|t| (t.id.to_string(), t.model.to_owned())).collect(),
+                None,
+            ))
         }
     }
 }

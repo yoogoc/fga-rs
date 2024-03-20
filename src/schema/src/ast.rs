@@ -119,6 +119,7 @@ pub struct Permission {
 }
 
 #[derive(Debug, PartialEq, Clone, FromJsonQueryResult, Deserialize, Serialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum Relationship {
     Set(RelationshipSet),
     Union {
@@ -134,6 +135,7 @@ pub enum Relationship {
 }
 
 #[derive(Debug, PartialEq, Clone, FromJsonQueryResult, Deserialize, Serialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum RelationshipSet {
     Single(String),
     Set(String, String),

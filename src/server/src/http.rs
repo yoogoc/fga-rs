@@ -141,7 +141,7 @@ impl HttpServer {
             )
             .api_route(
                 "/zanzibar/:tenant_id/check",
-                apirouting::post(zanzibar::check_x).with_state(self.checker.clone()),
+                apirouting::post(zanzibar::check_x).with_state((self.checker.clone(), self.authz_model_reader.clone())),
             )
             .api_route(
                 "/zanzibar/:tenant_id/expand",

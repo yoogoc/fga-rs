@@ -6,7 +6,7 @@ use checker::{CheckRequest, CheckResult, CheckerRef};
 use protocol::{Tuple, TupleKey};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use storage::{Pagination, RelationshipTupleReaderRef, RelationshipTupleWriterRef, TupleFilter};
+use storage::{AuthzModelReaderRef, Pagination, RelationshipTupleReaderRef, RelationshipTupleWriterRef, TupleFilter};
 
 use crate::error::Result;
 
@@ -18,7 +18,9 @@ pub struct ReadResult {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct CheckReq {
+    model_id: Option<String>,
     tuple_key: TupleKey,
+    #[serde(default)]
     contextual_tuples: Vec<TupleKey>,
 }
 
@@ -71,19 +73,25 @@ pub async fn watch(Path(tenant_id): Path<String>) -> Result<Json<ReadResult>> {
 
 // define check will fail
 #[axum::debug_handler]
-#[allow(unused)]
 pub async fn check_x(
-    State(state): State<CheckerRef>,
+    State((checker, model_reader)): State<(CheckerRef, AuthzModelReaderRef)>,
     Path(tenant_id): Path<String>,
     Json(req): Json<CheckReq>,
 ) -> Result<Json<CheckResult>> {
+    let (id, model) = if let Some(model_id) = req.model_id {
+        model_reader.get(String::from(&tenant_id), model_id).await?
+    } else {
+        model_reader.get_latest(String::from(&tenant_id)).await?
+    };
     let cr = CheckRequest {
-        // TODO typesystem convert
+        tenant_id,
+        model_id: id,
         tuple_key: req.tuple_key,
         contextual_tuples: req.contextual_tuples,
+        typesystem: model.to_typesystem(),
         ..Default::default()
     };
-    let result = state.check(cr).await?;
+    let result = checker.check(cr).await?;
     Ok(Json(result))
 }
 

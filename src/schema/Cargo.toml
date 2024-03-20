@@ -12,7 +12,7 @@ itertools = { workspace = true }
 unicode-xid = { workspace = true }
 phf = { workspace = true }
 sea-orm = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
+serde = { workspace = true }
 serde_json = { workspace = true }
 schemars = { workspace = true }
 

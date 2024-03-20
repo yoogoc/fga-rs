@@ -10,6 +10,9 @@ use serde::{Deserialize, Serialize};
 pub mod error;
 mod graph;
 
+#[test]
+mod tests;
+
 use std::{collections::HashSet, sync::Arc};
 
 use anyhow::Result;

@@ -47,8 +47,9 @@ pub trait RelationshipTupleWriter: Send + Sync {
 
 #[async_trait]
 pub trait AuthzModelReader: Send + Sync {
-    async fn get_latest(&self, tenant_id: String) -> Result<Schema>;
-    async fn list(&self, tenant_id: String, page: Option<Pagination>) -> Result<(Vec<Schema>, Option<u64>)>;
+    async fn get_latest(&self, tenant_id: String) -> Result<(String, Schema)>;
+    async fn get(&self, tenant_id: String, id: String) -> Result<(String, Schema)>;
+    async fn list(&self, tenant_id: String, page: Option<Pagination>) -> Result<(Vec<(String, Schema)>, Option<u64>)>;
 }
 
 #[async_trait]

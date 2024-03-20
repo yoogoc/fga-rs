@@ -7,16 +7,29 @@ use serde::{Deserialize, Serialize};
 use storage::{AuthzModelReaderRef, AuthzModelWriterRef, Pagination};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
+pub struct Model {
+    id: String,
+    model: Schema,
+}
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct ReadResult {
-    models: Vec<Schema>,
+    models: Vec<Model>,
     total: Option<u32>,
 }
 
-impl From<(Vec<Schema>, Option<u64>)> for ReadResult {
-    fn from(t: (Vec<Schema>, Option<u64>)) -> Self {
+impl From<(Vec<(String, Schema)>, Option<u64>)> for ReadResult {
+    fn from((schemas, total): (Vec<(String, Schema)>, Option<u64>)) -> Self {
         Self {
-            models: t.0,
-            total: t.1.map(|x| x as u32),
+            models: schemas
+                .iter()
+                .map(|(id, schema)| {
+                    return Model {
+                        id: id.to_string(),
+                        model: schema.to_owned(),
+                    };
+                })
+                .collect(),
+            total: total.map(|x| x as u32),
         }
     }
 }
