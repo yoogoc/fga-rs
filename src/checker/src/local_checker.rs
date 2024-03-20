@@ -10,7 +10,7 @@ use crate::{
 };
 
 pub struct LocalChecker {
-    resolver: CheckerRef,
+    resolver: Option<CheckerRef>,
     tuple_reader: RelationshipTupleReaderRef,
 }
 
@@ -27,7 +27,7 @@ impl Checker for LocalChecker {
 }
 
 impl LocalChecker {
-    pub fn new(resolver: CheckerRef, tuple_reader: RelationshipTupleReaderRef) -> Self {
+    pub fn new(resolver: Option<CheckerRef>, tuple_reader: RelationshipTupleReaderRef) -> Self {
         Self { resolver, tuple_reader }
     }
 
@@ -160,33 +160,39 @@ impl LocalChecker {
             })
             .collect();
 
-        let r = self.resolver.clone();
-        union_check(handlers.len(), |i| r.check(handlers.get(i).unwrap().to_owned())).await
+        if let Some(r) = self.resolver.clone() {
+            let r = r.clone();
+            union_check(handlers.len(), |i| r.check(handlers.get(i).unwrap().to_owned())).await
+        } else {
+            union_check(handlers.len(), |i| self.check(handlers.get(i).unwrap().to_owned())).await
+        }
     }
 
     async fn check_computed(&self, req: &CheckRequest, relation: &str) -> Result<CheckResult> {
-        self.resolver
-            .clone()
-            .check(CheckRequest {
-                tenant_id: req.tenant_id.to_owned(),
-                model_id: req.model_id.to_owned(),
-                typesystem: req.typesystem.clone(),
-                tuple_key: TupleKey {
-                    user_type: String::from(&req.tuple_key.user_type),
-                    user_id: String::from(&req.tuple_key.user_id),
-                    user_relation: String::from(&req.tuple_key.user_relation),
-                    relation: String::from(relation),
-                    object_type: String::from(&req.tuple_key.object_type),
-                    object_id: String::from(&req.tuple_key.object_id),
-                },
-                contextual_tuples: req.contextual_tuples.clone(),
-                resolution_metadata: ResolutionMetadata {
-                    depth: req.resolution_metadata.depth,
-                    datastore_query_count: req.resolution_metadata.datastore_query_count,
-                },
-                visited_paths: req.visited_paths.clone(),
-            })
-            .await
+        let check_request = CheckRequest {
+            tenant_id: req.tenant_id.to_owned(),
+            model_id: req.model_id.to_owned(),
+            typesystem: req.typesystem.clone(),
+            tuple_key: TupleKey {
+                user_type: String::from(&req.tuple_key.user_type),
+                user_id: String::from(&req.tuple_key.user_id),
+                user_relation: String::from(&req.tuple_key.user_relation),
+                relation: String::from(relation),
+                object_type: String::from(&req.tuple_key.object_type),
+                object_id: String::from(&req.tuple_key.object_id),
+            },
+            contextual_tuples: req.contextual_tuples.clone(),
+            resolution_metadata: ResolutionMetadata {
+                depth: req.resolution_metadata.depth,
+                datastore_query_count: req.resolution_metadata.datastore_query_count,
+            },
+            visited_paths: req.visited_paths.clone(),
+        };
+        if let Some(r) = self.resolver.clone() {
+            r.check(check_request).await
+        } else {
+            self.check(check_request).await
+        }
     }
     async fn check_tuple_to(&self, req: &CheckRequest, ttu: &TupleToUserset) -> Result<CheckResult> {
         let filter = TupleFilter {
@@ -225,8 +231,12 @@ impl LocalChecker {
             })
             .collect();
 
-        let r = self.resolver.clone();
-        union_check(handlers.len(), |i| r.check(handlers.get(i).unwrap().to_owned())).await
+        if let Some(r) = self.resolver.clone() {
+            let r = r.clone();
+            union_check(handlers.len(), |i| r.check(handlers.get(i).unwrap().to_owned())).await
+        } else {
+            union_check(handlers.len(), |i| self.check(handlers.get(i).unwrap().to_owned())).await
+        }
     }
 
     fn check_set_operation<'a, 'b>(

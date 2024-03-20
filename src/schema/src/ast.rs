@@ -1,6 +1,6 @@
-use std::vec;
+use std::{collections::HashMap, vec};
 
-use protocol::Typesystem;
+use protocol::{RelationMetadata, RelationReference, Type as ProtocolType, Typesystem, Userset};
 use schemars::JsonSchema;
 use sea_orm::FromJsonQueryResult;
 use serde::{Deserialize, Serialize};
@@ -23,13 +23,50 @@ impl Schema {
     }
 
     pub fn to_typesystem(self) -> Typesystem {
-        // let mut ts = HashMap::new();
-        // for typ in self.types {
-        //     ts.insert(typ.name, typ.into());
-        // }
+        let mut ts = HashMap::new();
+        for typ in self.types {
+            let mut relations = HashMap::new();
+            let mut metadata = HashMap::new();
 
-        // Typesystem(ts)
-        todo!()
+            for rel in &typ.relations {
+                let mut directly_related_user_types = vec![];
+                for sub in &rel.subjects {
+                    match sub {
+                        RelationshipSet::Single(ref user) => {
+                            relations.insert(String::from(&rel.name), Userset::This);
+                            directly_related_user_types.push(RelationReference::Direct(String::from(user)));
+                        }
+                        RelationshipSet::Set(ref user, ref relation) => {
+                            relations.insert(String::from(&rel.name), Userset::This);
+                            if relation.eq("*") {
+                                directly_related_user_types.push(RelationReference::Wildcard(String::from(user)));
+                            } else {
+                                directly_related_user_types.push(RelationReference::Relation {
+                                    r#type: String::from(user),
+                                    relation: String::from(relation),
+                                });
+                            }
+                        }
+                    }
+                }
+                metadata.insert(
+                    String::from(&rel.name),
+                    RelationMetadata {
+                        directly_related_user_types,
+                    },
+                );
+            }
+
+            let t = ProtocolType {
+                name: String::from(&typ.name),
+                relations,
+                metadata,
+            };
+
+            ts.insert(typ.name, t);
+        }
+
+        Typesystem(ts)
     }
 }
 

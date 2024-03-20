@@ -80,7 +80,7 @@ impl TupleKey {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct Relation {
-    pub name: String,
+    // pub name: String,
     pub rewrite: Userset,
     pub type_info: RelationTypeInfo,
 }

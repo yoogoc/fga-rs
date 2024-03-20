@@ -39,8 +39,9 @@ impl Servers {
         let authz_model_writer = storage.clone();
         let tenant_operator = storage.clone();
 
-        let resolver = Arc::new(checker::RemoteChecker::new());
-        let local_checker = Arc::new(checker::LocalChecker::new(resolver, storage.clone()));
+        // config distributed: if distributed { remote } else { local }
+        // let resolver = Arc::new(checker::RemoteChecker::new());
+        let local_checker = Arc::new(checker::LocalChecker::new(None, storage.clone()));
         let cache_checker = Arc::new(checker::CacheChecker::new(local_checker.clone()));
 
         let mut servers = Vec::<(Box<dyn Server>, SocketAddr)>::with_capacity(2);
