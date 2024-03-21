@@ -1,7 +1,6 @@
-CREATE SEQUENCE public.global_id_seq;
-ALTER SEQUENCE public.global_id_seq OWNER TO postgres;
+CREATE SEQUENCE global_id_seq;
 
-CREATE OR REPLACE FUNCTION public.id_generator()
+CREATE OR REPLACE FUNCTION id_generator()
     RETURNS bigint
     LANGUAGE 'plpgsql'
 AS $BODY$
@@ -23,8 +22,6 @@ BEGIN
 	return result;
 END;
 $BODY$;
-
-ALTER FUNCTION public.id_generator() OWNER TO postgres;
 
 CREATE TABLE relation_tuples (
   "id" int8 NOT NULL default id_generator(),
