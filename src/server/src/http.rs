@@ -22,7 +22,7 @@ use tokio::sync::oneshot::{self, Sender};
 use crate::{error::ServerError, Server};
 use anyhow::{ensure, Result};
 use async_trait::async_trait;
-use axum::{routing::get, Extension, Json, Router};
+use axum::{extract::MatchedPath, http::Request, routing::get, Extension, Json, Router};
 use tokio::sync::Mutex;
 
 pub struct HttpServer {
@@ -185,7 +185,15 @@ impl HttpServer {
                 "/api/v1/scalar",
                 get(Scalar::new("/api/v1/api.json").with_title("fga-rs").axum_handler()),
             )
-            .layer(TraceLayer::new_for_http())
+            .layer(TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
+                let matched_path = request.extensions().get::<MatchedPath>().map(MatchedPath::as_str);
+                trace_span!(
+                    "http_request",
+                    method = ?request.method(),
+                    matched_path,
+                    some_other_field = tracing::field::Empty,
+                )
+            }))
             .finish_api(&mut api)
             .layer(Extension(api.clone()))
     }

@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use futures::{future::BoxFuture, FutureExt};
 use protocol::{RelationReference, SetOperator, TupleKey, TupleToUserset, Userset, WILDCARD};
 use storage::{RelationshipTupleReaderRef, TupleFilter};
+use tracing::Instrument;
 
 use crate::{
     error::CheckerError, exclusion_check, graph::ResolutionMetadata, intersection_check, union_check, CheckRequest,
@@ -17,13 +18,23 @@ pub struct LocalChecker {
 #[async_trait]
 impl Checker for LocalChecker {
     async fn check(&self, req: CheckRequest) -> Result<CheckResult> {
+        let span = info_span!("local-checker");
+        let _enter = span.enter();
+        trace!("tuple is {}, model id is {}", &req.tuple_key, &req.model_id);
         let relation = req
             .typesystem
             .get_relation(&req.tuple_key.object_type, &req.tuple_key.relation)?;
-        self.check_rewrite(&req, &relation.rewrite).await
+
+        self.check_rewrite(&req, &relation.rewrite)
+            .instrument(span.clone())
+            .await
     }
 
     async fn close(&self) {}
+
+    fn name(&self) -> &str {
+        "local"
+    }
 }
 
 impl LocalChecker {
@@ -48,9 +59,15 @@ impl LocalChecker {
         }
     }
     async fn check_direct(&self, req: &CheckRequest) -> Result<CheckResult> {
+        let span = info_span!("direct-check");
+        let _enter = span.enter();
+        trace!("tuple request: {}", &req.tuple_key);
         let related_usersets = req
             .typesystem
             .get_directly_related_types(&req.tuple_key.object_type, &req.tuple_key.relation)?;
+
+        trace!("related_usersets: {:?}", &related_usersets);
+
         if related_usersets.is_empty() {
             return Err(CheckerError::NotFoundThisTypes {
                 object_type: String::from(&req.tuple_key.object_type),
@@ -106,7 +123,15 @@ impl LocalChecker {
             filter.or = Some(or_filter);
         }
 
-        let (tuples, _) = self.tuple_reader.clone().list(&req.tenant_id, filter, None).await?;
+        let (tuples, _) = self
+            .tuple_reader
+            .clone()
+            .list(&req.tenant_id, filter, None)
+            .instrument(span.clone())
+            .await?;
+
+        let _enter = span.enter();
+        trace!("tuples: {:?}", tuples);
 
         if tuples.is_empty() {
             return Ok(CheckResult::new_dqc(
@@ -119,20 +144,23 @@ impl LocalChecker {
         let direct_asserts: Vec<bool> = tuples
             .iter()
             .filter_map(|t| {
-                if !t.user_type.eq(&req.tuple_key.user_type) {
+                if !t.user_type.eq(&req.tuple_key.user_type) || !t.object_type.eq(&req.tuple_key.object_type) {
                     return None;
                 }
-                let f = || t.user_id.eq(WILDCARD) || t.user_id.eq(&req.tuple_key.user_id);
+                let allow = t.user_id.eq(WILDCARD) || t.user_id.eq(&req.tuple_key.user_id);
                 if let Some(relation) = &t.user_relation {
-                    Some(relation.eq(&req.tuple_key.user_relation) && f())
+                    Some(relation.eq(&req.tuple_key.user_relation) && allow)
                 } else {
-                    Some(f())
+                    Some(allow)
                 }
             })
             .collect();
+
         if !direct_asserts.is_empty() {
+            let allow = direct_asserts.iter().any(|x| x.to_owned());
+            trace!("direct_asserts present, allow is {}", allow);
             return Ok(CheckResult::new_dqc(
-                direct_asserts.iter().any(|x| x.to_owned()),
+                allow,
                 req.resolution_metadata.datastore_query_count + 1,
             ));
         }
@@ -160,15 +188,28 @@ impl LocalChecker {
             })
             .collect();
 
+        trace!(
+            "collect possible requests, tuples: {:?}",
+            handlers.iter().map(|x| &x.tuple_key).collect::<Vec<_>>()
+        );
+
         if let Some(r) = self.resolver.clone() {
             let r = r.clone();
-            union_check(handlers.len(), |i| r.check(handlers.get(i).unwrap().to_owned())).await
+            trace!("use {} checker", r.name());
+            union_check(handlers.len(), |i| r.check(handlers.get(i).unwrap().to_owned()))
+                .instrument(span.clone())
+                .await
         } else {
-            union_check(handlers.len(), |i| self.check(handlers.get(i).unwrap().to_owned())).await
+            trace!("use {} checker", self.name());
+            union_check(handlers.len(), |i| self.check(handlers.get(i).unwrap().to_owned()))
+                .instrument(span.clone())
+                .await
         }
     }
 
     async fn check_computed(&self, req: &CheckRequest, relation: &str) -> Result<CheckResult> {
+        let span = info_span!("computed-check");
+        let _enter = span.enter();
         let check_request = CheckRequest {
             tenant_id: req.tenant_id.to_owned(),
             model_id: req.model_id.to_owned(),
@@ -189,12 +230,16 @@ impl LocalChecker {
             visited_paths: req.visited_paths.clone(),
         };
         if let Some(r) = self.resolver.clone() {
-            r.check(check_request).await
+            trace!("use {} checker", r.name());
+            r.check(check_request).instrument(span.clone()).await
         } else {
-            self.check(check_request).await
+            trace!("use {} checker", self.name());
+            self.check(check_request).instrument(span.clone()).await
         }
     }
     async fn check_tuple_to(&self, req: &CheckRequest, ttu: &TupleToUserset) -> Result<CheckResult> {
+        let span = info_span!("tuple-to-check");
+        let _enter = span.enter();
         let filter = TupleFilter {
             object_type_eq: Some(String::from(&req.tuple_key.object_type)),
             object_id_eq: Some(String::from(&req.tuple_key.object_id)),
@@ -233,9 +278,15 @@ impl LocalChecker {
 
         if let Some(r) = self.resolver.clone() {
             let r = r.clone();
-            union_check(handlers.len(), |i| r.check(handlers.get(i).unwrap().to_owned())).await
+            trace!("use {} checker", r.name());
+            union_check(handlers.len(), |i| r.check(handlers.get(i).unwrap().to_owned()))
+                .instrument(span.clone())
+                .await
         } else {
-            union_check(handlers.len(), |i| self.check(handlers.get(i).unwrap().to_owned())).await
+            trace!("use {} checker", self.name());
+            union_check(handlers.len(), |i| self.check(handlers.get(i).unwrap().to_owned()))
+                .instrument(span.clone())
+                .await
         }
     }
 

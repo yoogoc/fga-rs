@@ -7,6 +7,7 @@ use protocol::{Tuple, TupleKey};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use storage::{AuthzModelReaderRef, Pagination, RelationshipTupleReaderRef, RelationshipTupleWriterRef, TupleFilter};
+use tracing::Instrument;
 
 use crate::error::Result;
 
@@ -83,6 +84,8 @@ pub async fn check_x(
     } else {
         model_reader.get_latest(String::from(&tenant_id)).await?
     };
+    let span = trace_span!("check");
+
     let cr = CheckRequest {
         tenant_id,
         model_id: id,
@@ -91,7 +94,7 @@ pub async fn check_x(
         typesystem: model.to_typesystem(),
         ..Default::default()
     };
-    let result = checker.check(cr).await?;
+    let result = checker.check(cr).instrument(span).await?;
     Ok(Json(result))
 }
 

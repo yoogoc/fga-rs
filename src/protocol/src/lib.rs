@@ -2,7 +2,7 @@ mod error;
 mod tuple;
 mod typesystem;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -67,6 +67,24 @@ pub struct TupleKey {
     pub relation: String,
     pub object_type: String,
     pub object_id: String,
+}
+
+impl fmt::Display for TupleKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.user_relation.eq("") {
+            write!(
+                f,
+                "{}:{}-{}-{}:{}",
+                &self.object_type, &self.object_id, &self.relation, &self.user_type, &self.user_id
+            )
+        } else {
+            write!(
+                f,
+                "{}:{}-{}-{}:{}#{}",
+                &self.object_type, &self.object_id, &self.relation, &self.user_type, &self.user_id, &self.user_relation
+            )
+        }
+    }
 }
 
 impl TupleKey {

@@ -27,4 +27,4 @@ tower-http = { workspace = true }
 aide = { workspace = true }
 schemars = { workspace = true }
 indexmap = { workspace = true }
-
+log = { workspace = true }

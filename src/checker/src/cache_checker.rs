@@ -2,6 +2,7 @@ use anyhow::Ok;
 use async_trait::async_trait;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use moka::sync::Cache;
+use tracing::Instrument;
 
 use crate::{CheckRequest, CheckResult, Checker, CheckerRef};
 
@@ -13,11 +14,16 @@ pub struct CacheChecker {
 #[async_trait]
 impl Checker for CacheChecker {
     async fn check(&self, req: CheckRequest) -> anyhow::Result<CheckResult> {
+        let span = trace_span!("cache-checker");
+        let _enter = span.enter();
         let key = self.request_cache_key(&req);
         if let Some(allow) = self.cache.get(&key) {
+            trace!("Hit Cache, key is: {}, result is : {}", &key, allow);
             Ok(CheckResult::new(allow))
         } else {
-            let resp = self.delegate.clone().check(req).await?;
+            let checker = self.delegate.clone();
+            trace!("Miss Cache, enter {} checker", checker.name());
+            let resp = checker.check(req).instrument(span.clone()).await?;
             self.cache.insert(key, resp.allow);
             Ok(CheckResult::new(resp.allow))
         }
@@ -25,6 +31,10 @@ impl Checker for CacheChecker {
 
     async fn close(&self) {
         self.cache.invalidate_all();
+    }
+
+    fn name(&self) -> &str {
+        "cache"
     }
 }
 

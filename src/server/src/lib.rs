@@ -30,7 +30,8 @@ pub struct Servers {
 impl Servers {
     pub async fn new(config: Config) -> Self {
         info!("init servers");
-        let options = ConnectOptions::new(&config.datasource.uri);
+        let mut options = ConnectOptions::new(&config.datasource.uri);
+        options.sqlx_logging_level(log::LevelFilter::Debug);
         let conn = Database::connect(options).await.unwrap();
         let storage = Arc::new(postgres::Storage::new(Arc::new(conn)));
         let tuple_reader = storage.clone();
@@ -74,6 +75,6 @@ impl Servers {
 
 pub async fn start_server(server_and_addr: &(Box<dyn Server>, SocketAddr)) -> Result<Option<SocketAddr>> {
     let (server, addr) = server_and_addr;
-    info!("Starting {} at {}", server.name(), addr);
+    info!("Start {} at {}", server.name(), addr);
     server.start(*addr).await.map(Some)
 }

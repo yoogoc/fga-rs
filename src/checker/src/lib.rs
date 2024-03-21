@@ -10,6 +10,9 @@ use serde::{Deserialize, Serialize};
 pub mod error;
 mod graph;
 
+#[macro_use]
+extern crate tracing;
+
 #[test]
 mod tests;
 
@@ -63,6 +66,8 @@ pub trait Checker: Send + Sync {
     async fn check(&self, req: CheckRequest) -> Result<CheckResult>;
     // call when finish a request
     async fn close(&self);
+
+    fn name(&self) -> &str;
 }
 
 pub type CheckerRef = Arc<dyn Checker>;

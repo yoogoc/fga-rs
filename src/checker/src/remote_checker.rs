@@ -20,4 +20,8 @@ impl Checker for RemoteChecker {
     async fn close(&self) {
         todo!()
     }
+
+    fn name(&self) -> &str {
+        "remote"
+    }
 }
