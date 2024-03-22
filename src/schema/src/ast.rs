@@ -134,6 +134,12 @@ pub enum Relationship {
     },
 }
 
+impl Relationship {
+    pub fn compute(self) -> Relationship {
+        todo!()
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, FromJsonQueryResult, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum RelationshipSet {

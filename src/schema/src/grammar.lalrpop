@@ -27,6 +27,7 @@ IRelationOrPermissions: Vec<RelationOrPermission> = {
 
 IRelationOrPermission: RelationOrPermission = {
   Relation => RelationOrPermission::Relation(<>),
+  Permission => RelationOrPermission::Permission(<>),
   // TODO permission
 }
 
@@ -50,6 +51,36 @@ RRelationshipSet: RelationshipSet = {
   <n:identifier> "#" <r:identifier> => RelationshipSet::Set(n.to_string(), r.to_string())
 }
 
+Permission: Permission = {
+  "permission" <n:identifier> ":" <expr: RelationshipExpr> => Permission {
+    name: n.to_string(),
+    permissions: vec![expr.compute()],
+  },
+}
+
+RelationshipExpr: Relationship = {
+  <l:RelationshipExpr> "+" <r:RelationshipFactor> => Relationship::Union {
+    children: vec![Box::new(l), Box::new(r)]
+  },
+  <l:RelationshipExpr> "-" <r:RelationshipFactor> => Relationship::Difference {
+    base: Box::new(l),
+    subtract: Box::new(r)
+  },
+  RelationshipFactor,
+}
+
+RelationshipFactor: Relationship = {
+  <l:RelationshipFactor> "&" <r:RelationshipSetTerm> => Relationship::Intersection {
+    children: vec![Box::new(l), Box::new(r)]
+  },
+  RelationshipSetTerm,
+}
+
+RelationshipSetTerm: Relationship = {
+  RRelationshipSet => Relationship::Set(<>),
+  "(" <RelationshipExpr> ")"
+}
+
 extern {
     type Location = usize;
     type Error = LexicalError;
@@ -60,7 +91,7 @@ extern {
         "}" => Token::RBrace,
         "type" => Token::Type,
         "relation" => Token::Relation,
-        "rermission" => Token::Permission,
+        "permission" => Token::Permission,
         "cond" => Token::Cond,
         ":" => Token::Colon,
         "(" => Token::LBracket,
