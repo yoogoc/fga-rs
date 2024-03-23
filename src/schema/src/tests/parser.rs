@@ -1,4 +1,4 @@
-use super::*;
+use crate::*;
 
 #[test]
 fn test_lexer() {
@@ -58,11 +58,10 @@ type block {
   relation assignment: user
 }
 ";
-    let mut comments = vec![];
-    let result = Lexer::new(schema, &mut comments).collect::<Vec<_>>();
+    let result = parse(schema).unwrap();
     assert_eq!(
-        result,
-        Ok(Schema {
+        result.0,
+        Schema {
             types: vec![
                 Type {
                     name: String::from("user"),
@@ -78,7 +77,7 @@ type block {
                     permissions: vec![]
                 }
             ]
-        })
+        }
     )
 }
 
@@ -103,11 +102,10 @@ type folder {
   relation parent: folder
   relation viewer: user | user#* | group#member | owner | parent#viewer
 }";
-    let mut comments = vec![];
-    let result = Lexer::new(schema, &mut comments).collect::<Vec<_>>();
+    let result = parse(schema).unwrap();
     assert_eq!(
-        result,
-        Ok(Schema {
+        result.0,
+        Schema {
             types: vec![
                 Type {
                     name: String::from("user"),
@@ -155,6 +153,6 @@ type folder {
                     permissions: vec![]
                 }
             ]
-        })
+        }
     )
 }

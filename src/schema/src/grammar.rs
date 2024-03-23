@@ -1,5 +1,5 @@
 // auto-generated: "lalrpop 0.20.2"
-// sha3: 00531e897d8273153fdba8343ff9858587d678c51097929b87d2c4c436252b32
+// sha3: f1f3cfbc19ec904e1c733f12e793a6f5f5ec3f289576c0b09efae919eeffc428
 use crate::{ token::Token, lexer::LexicalError, ast::* };
 #[allow(unused_extern_crates)]
 extern crate lalrpop_util as __lalrpop_util;
@@ -2364,7 +2364,7 @@ fn __action14<
 {
     Permission {
     name: n.to_string(),
-    permissions: vec![expr.compute()],
+    permission: expr.compute(),
   }
 }
 

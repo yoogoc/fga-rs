@@ -1,20 +1,19 @@
-use lalrpop_util::ParseError;
-use lexer::LexicalError;
-
 pub mod ast;
 mod grammar;
 pub mod lexer;
 mod pos;
+pub mod token;
+
+#[cfg(test)]
+mod tests;
 
 pub use ast::*;
 pub use grammar::SchemaParser as Parser;
+use lalrpop_util::ParseError;
 pub use lexer::Lexer;
+use lexer::LexicalError;
 pub use pos::Loc;
 pub use token::*;
-
-#[cfg(test)]
-mod test;
-pub mod token;
 
 pub fn parse<'a>(input: &'a str) -> Result<(Schema, Vec<(Loc, String)>), Vec<(Loc, String)>> {
     let mut errors = vec![];

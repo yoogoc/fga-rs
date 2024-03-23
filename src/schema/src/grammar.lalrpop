@@ -28,7 +28,6 @@ IRelationOrPermissions: Vec<RelationOrPermission> = {
 IRelationOrPermission: RelationOrPermission = {
   Relation => RelationOrPermission::Relation(<>),
   Permission => RelationOrPermission::Permission(<>),
-  // TODO permission
 }
 
 Relation: Relation = {
@@ -54,7 +53,7 @@ RRelationshipSet: RelationshipSet = {
 Permission: Permission = {
   "permission" <n:identifier> ":" <expr: RelationshipExpr> => Permission {
     name: n.to_string(),
-    permissions: vec![expr.compute()],
+    permission: expr.compute(),
   },
 }
 

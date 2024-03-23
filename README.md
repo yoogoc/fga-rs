@@ -36,7 +36,7 @@ cargo run -p cli -- server -d postgres://postgres@127.0.0.1:5432/fga-rs
 ## TODO
 
 - [x] schema: design(such as model.authz), parser(use lalrpop)
-- [ ] schema: support permission: union(+ |), intersection(&), exclude(-), priority
+- [x] schema: support permission: union(+ |), intersection(&), exclude(-), priority
 - [ ] support condition(expr eval)
 - [ ] remote checker
 - [ ] grpc

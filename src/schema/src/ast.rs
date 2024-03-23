@@ -115,7 +115,7 @@ pub struct Relation {
 #[derive(Debug, PartialEq, Clone, FromJsonQueryResult, Deserialize, Serialize, JsonSchema)]
 pub struct Permission {
     pub name: String,
-    pub permissions: Vec<Relationship>,
+    pub permission: Relationship,
 }
 
 #[derive(Debug, PartialEq, Clone, FromJsonQueryResult, Deserialize, Serialize, JsonSchema)]
@@ -136,7 +136,69 @@ pub enum Relationship {
 
 impl Relationship {
     pub fn compute(self) -> Relationship {
-        todo!()
+        match self {
+            Relationship::Set(_) => self,
+            Relationship::Union { children } => {
+                let mut rss = vec![];
+                let mut is_simplest = true;
+                for child in children {
+                    let child = child.compute();
+                    match child {
+                        Relationship::Set(_) => rss.push(Box::new(child)),
+                        Relationship::Union { children } => {
+                            is_simplest = false;
+                            for child in children {
+                                rss.push(Box::new(child.compute()));
+                            }
+                        }
+                        Relationship::Intersection { .. } => rss.push(Box::new(child.compute())),
+                        Relationship::Difference { .. } => rss.push(Box::new(child.compute())),
+                    }
+                }
+                if rss.len() == 1 {
+                    let rs = rss.pop().unwrap();
+                    *rs
+                } else {
+                    if is_simplest {
+                        Relationship::Union { children: rss }
+                    } else {
+                        Relationship::Union { children: rss }.compute()
+                    }
+                }
+            }
+            Relationship::Intersection { children } => {
+                let mut rss = vec![];
+                let mut is_simplest = true;
+                for child in children {
+                    let child = child.compute();
+                    match child {
+                        Relationship::Set(_) => rss.push(Box::new(child)),
+                        Relationship::Union { .. } => rss.push(Box::new(child.compute())),
+                        Relationship::Intersection { children } => {
+                            is_simplest = false;
+                            for child in children {
+                                rss.push(Box::new(child.compute()));
+                            }
+                        }
+                        Relationship::Difference { .. } => rss.push(Box::new(child.compute())),
+                    }
+                }
+                if rss.len() == 1 {
+                    let rs = rss.pop().unwrap();
+                    *rs
+                } else {
+                    if is_simplest {
+                        Relationship::Intersection { children: rss }
+                    } else {
+                        Relationship::Intersection { children: rss }.compute()
+                    }
+                }
+            }
+            Relationship::Difference { base, subtract } => Relationship::Difference {
+                base: Box::new(base.compute()),
+                subtract: Box::new(subtract.compute()),
+            },
+        }
     }
 }
 
