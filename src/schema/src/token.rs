@@ -3,6 +3,7 @@ use std::fmt;
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Token<'input> {
     Identifier(&'input str), // identifier
+    Comment(&'input str),    // identifier
     Type,                    // type
     Relation,                // relation
     Permission,              // permission
@@ -26,6 +27,10 @@ impl<'input> fmt::Display for Token<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Token::Identifier(id) => f.write_str(id),
+            Token::Comment(comment) => {
+                f.write_str("// ")?;
+                f.write_str(comment)
+            }
             Token::Type => f.write_str("type"),
             Token::Relation => f.write_str("relation"),
             Token::Permission => f.write_str("permission"),

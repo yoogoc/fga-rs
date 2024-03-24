@@ -12,6 +12,8 @@ pub struct Lexer<'input> {
     input: &'input str,
     chars: PeekNth<CharIndices<'input>>,
     comments: &'input mut Vec<(Loc, String)>,
+    location: usize,
+    at_begin_of_line: bool,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -32,13 +34,21 @@ impl<'input> Lexer<'input> {
         Lexer {
             input,
             comments,
+            location: 0,
+            at_begin_of_line: true,
             chars: peek_nth(input.char_indices()),
         }
     }
 
+    fn next_char(&mut self) -> Option<(usize, char)> {
+        self.location += 1;
+        self.chars.next()
+    }
+
     fn inner_next(&mut self) -> Option<Result<(usize, Token<'input>, usize), LexicalError>> {
         loop {
-            match self.chars.next() {
+            self.at_begin_of_line = false;
+            match self.next_char() {
                 Some((i, ch)) if UnicodeXID::is_xid_start(ch) || ch == '*' => {
                     let (id, end) = self.match_identifier(i);
                     return if let Some(w) = KEYWORDS.get(id) {
@@ -66,33 +76,19 @@ impl<'input> Lexer<'input> {
                 }
                 Some((i, '#')) => return Some(Ok((i, Token::Sharp, i + 1))),
                 Some((_, ' ')) | Some((_, '\t')) | Some((_, '\x0C')) => (),
-                Some((i, '\n')) | Some((i, '\r')) => return Some(Ok((i, Token::Newline, i + 1))),
-                Some((i, '/')) => {
-                    let peek = self.chars.peek();
-                    if matches!(peek, Some((_, '/'))) {
-                        let end;
-                        loop {
-                            match self.chars.next() {
-                                None => {
-                                    end = self.input.len();
-                                    break;
-                                }
-                                Some((offset, '\n' | '\r')) => {
-                                    end = offset;
-                                    break;
-                                }
-                                Some(_) => (),
-                            }
-                        }
-                        self.comments.push(((i, end), self.input[i..end].to_owned()));
-                    } else {
-                        return Some(Err(LexicalError::UnrecognisedToken((i, i + 1), "/".to_owned())));
+                Some((i, '\n')) | Some((i, '\r')) => {
+                    self.at_begin_of_line = true;
+                    return Some(Ok((i, Token::Newline, i + 1)));
+                }
+                Some((_, '/')) => {
+                    if let Err(err) = self.eat_comment() {
+                        return Some(Err(err));
                     }
                 }
                 Some((start, _)) => {
                     let mut end;
                     loop {
-                        if let Some((i, ch)) = self.chars.next() {
+                        if let Some((i, ch)) = self.next_char() {
                             end = i;
                             if ch.is_whitespace() {
                                 break;
@@ -120,7 +116,7 @@ impl<'input> Lexer<'input> {
                     end = *i;
                     break;
                 }
-                self.chars.next();
+                self.next_char();
             } else {
                 end = self.input.len();
                 break;
@@ -129,12 +125,71 @@ impl<'input> Lexer<'input> {
 
         (&self.input[start..end], end)
     }
+
+    fn eat_comment(&mut self) -> Result<(), LexicalError> {
+        let i = self.location - 1;
+        let peek = self.chars.peek();
+        if matches!(peek, Some((_, '/'))) {
+            let end;
+            loop {
+                let peek = self.chars.peek();
+                match peek {
+                    None => {
+                        end = self.input.len();
+                        self.next_char();
+                        break;
+                    }
+                    Some((offset, '\n' | '\r')) => {
+                        end = offset.clone();
+                        break;
+                    }
+                    Some(_) => {
+                        self.next_char();
+                    }
+                }
+            }
+            self.comments.push(((i, end), self.input[i..end].to_owned()));
+        } else {
+            return Err(LexicalError::UnrecognisedToken((i, i + 1), "/".to_owned()));
+        }
+        Ok(())
+    }
+
+    fn eat_indentation(&mut self) -> Result<(), LexicalError> {
+        loop {
+            match self.chars.peek() {
+                Some((_, ' ')) | Some((_, '\t')) | Some((_, '\x0C')) => {
+                    self.next_char();
+                }
+                Some((_, '/')) => {
+                    self.next_char();
+                    self.eat_comment()?;
+                }
+                Some((_, '\n')) | Some((_, '\r')) => {
+                    self.next_char();
+                }
+                Some(_) => {
+                    self.at_begin_of_line = false;
+                    break;
+                }
+                None => {
+                    break;
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 impl<'input> Iterator for Lexer<'input> {
     type Item = Spanned<Token<'input>, usize, LexicalError>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.at_begin_of_line {
+            if let Err(err) = self.eat_indentation() {
+                return Some(Err(err));
+            }
+        }
         let token = self.inner_next();
 
         // trace!
