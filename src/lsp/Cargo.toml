@@ -1,0 +1,13 @@
+[package]
+name = "lsp"
+version.workspace = true
+edition.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+schema = { path = "../schema" }
+
+tower-lsp = { workspace = true }
+tokio = { workspace = true }
+serde_json = { workspace = true }
