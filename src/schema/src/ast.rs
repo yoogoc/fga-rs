@@ -1,6 +1,8 @@
 use std::{collections::HashMap, vec};
 
-use protocol::{RelationMetadata, RelationReference, Type as ProtocolType, Typesystem, Userset};
+use protocol::{
+    ObjectRelation, RelationMetadata, RelationReference, TupleToUserset, Type as ProtocolType, Typesystem, Userset,
+};
 use schemars::JsonSchema;
 use sea_orm::FromJsonQueryResult;
 use serde::{Deserialize, Serialize};
@@ -55,6 +57,10 @@ impl Schema {
                         directly_related_user_types,
                     },
                 );
+            }
+
+            for permission in typ.permissions {
+                relations.insert(String::from(&permission.name), permission.permission.to_userset());
             }
 
             let t = ProtocolType {
@@ -197,6 +203,37 @@ impl Relationship {
             Relationship::Difference { base, subtract } => Relationship::Difference {
                 base: Box::new(base.compute()),
                 subtract: Box::new(subtract.compute()),
+            },
+        }
+    }
+
+    fn to_userset(&self) -> Userset {
+        match self {
+            Relationship::Set(s) => match s {
+                RelationshipSet::Single(rel) => Userset::Computed(ObjectRelation {
+                    object: "".into(),
+                    relation: rel.into(),
+                }),
+                RelationshipSet::Set(rel, obj) => Userset::TupleTo(TupleToUserset {
+                    tupleset: ObjectRelation {
+                        object: "".into(),
+                        relation: obj.into(),
+                    },
+                    computed_userset: ObjectRelation {
+                        object: "".into(),
+                        relation: rel.into(),
+                    },
+                }),
+            },
+            Relationship::Union { children } => Userset::Union {
+                children: children.iter().map(|child| Box::new(child.to_userset())).collect(),
+            },
+            Relationship::Intersection { children } => Userset::Intersection {
+                children: children.iter().map(|child| Box::new(child.to_userset())).collect(),
+            },
+            Relationship::Difference { base, subtract } => Userset::Difference {
+                base: Box::new(base.to_userset()),
+                subtract: Box::new(subtract.to_userset()),
             },
         }
     }
