@@ -25,6 +25,22 @@ pub struct CheckReq {
     contextual_tuples: Vec<TupleKey>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
+pub struct ExpandReq {
+    model_id: Option<String>,
+    relation: String,
+    object_type: String,
+    object_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
+pub struct ExpandObjectsReq {
+    model_id: Option<String>,
+    relation: String,
+    user_type: String,
+    user_id: String,
+}
+
 impl From<(Vec<Tuple>, Option<u64>)> for ReadResult {
     fn from(t: (Vec<Tuple>, Option<u64>)) -> Self {
         Self {
@@ -99,10 +115,24 @@ pub async fn check_x(
 }
 
 #[axum::debug_handler]
-#[allow(unused)]
 pub async fn expand(
-    State(state): State<RelationshipTupleReaderRef>,
+    State((state, model_reader)): State<(RelationshipTupleReaderRef, AuthzModelReaderRef)>,
     Path(tenant_id): Path<String>,
+    Json(req): Json<ExpandReq>,
+) -> Result<Json<ReadResult>> {
+    let (id, model) = if let Some(model_id) = req.model_id {
+        model_reader.get(String::from(&tenant_id), model_id).await?
+    } else {
+        model_reader.get_latest(String::from(&tenant_id)).await?
+    };
+    todo!()
+}
+
+#[axum::debug_handler]
+pub async fn expand_objects(
+    State((state, model_reader)): State<(RelationshipTupleReaderRef, AuthzModelReaderRef)>,
+    Path(tenant_id): Path<String>,
+    Json(req): Json<ExpandObjectsReq>,
 ) -> Result<Json<ReadResult>> {
     todo!()
 }

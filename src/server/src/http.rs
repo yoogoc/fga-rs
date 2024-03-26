@@ -145,7 +145,13 @@ impl HttpServer {
             )
             .api_route(
                 "/zanzibar/:tenant_id/expand",
-                apirouting::get(zanzibar::expand).with_state(self.tuple_reader.clone()),
+                apirouting::get(zanzibar::expand)
+                    .with_state((self.tuple_reader.clone(), self.authz_model_reader.clone())),
+            )
+            .api_route(
+                "/zanzibar/:tenant_id/expand-objects",
+                apirouting::get(zanzibar::expand_objects)
+                    .with_state((self.tuple_reader.clone(), self.authz_model_reader.clone())),
             );
 
         let authz_model_route = ApiRouter::new()
