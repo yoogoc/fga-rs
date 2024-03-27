@@ -8,7 +8,7 @@ use aide::{
     redoc::Redoc,
     scalar::Scalar,
 };
-use std::{net::SocketAddr, time::Duration};
+use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tower_http::trace::TraceLayer;
 
 use checker::CheckerRef;
@@ -19,7 +19,7 @@ use storage::{
 };
 use tokio::sync::oneshot::{self, Sender};
 
-use crate::{error::ServerError, Server};
+use crate::{error::ServerError, expander::Expander, Server};
 use anyhow::{ensure, Result};
 use async_trait::async_trait;
 use axum::{extract::MatchedPath, http::Request, routing::get, Extension, Json, Router};
@@ -32,6 +32,7 @@ pub struct HttpServer {
     authz_model_writer: AuthzModelWriterRef,
     tenant_operator: TenantOperatorRef,
     checker: CheckerRef,
+    expander: Arc<Expander>,
     shutdown_tx: Mutex<Option<Sender<()>>>,
 }
 
@@ -60,6 +61,7 @@ impl HttpServer {
         authz_model_writer: AuthzModelWriterRef,
         tenant_operator: TenantOperatorRef,
         checker: CheckerRef,
+        expander: Arc<Expander>,
     ) -> Self {
         Self {
             tuple_reader,
@@ -68,6 +70,7 @@ impl HttpServer {
             authz_model_writer,
             tenant_operator,
             checker,
+            expander,
             shutdown_tx: Mutex::new(None),
         }
     }
@@ -145,12 +148,16 @@ impl HttpServer {
             )
             .api_route(
                 "/zanzibar/:tenant_id/expand",
-                apirouting::get(zanzibar::expand)
-                    .with_state((self.tuple_reader.clone(), self.authz_model_reader.clone())),
+                apirouting::get(zanzibar::expand).with_state((self.expander.clone(), self.authz_model_reader.clone())),
             )
             .api_route(
                 "/zanzibar/:tenant_id/expand-objects",
                 apirouting::get(zanzibar::expand_objects)
+                    .with_state((self.tuple_reader.clone(), self.authz_model_reader.clone())),
+            )
+            .api_route(
+                "/zanzibar/:tenant_id/expand-users",
+                apirouting::get(zanzibar::expand_users)
                     .with_state((self.tuple_reader.clone(), self.authz_model_reader.clone())),
             );
 

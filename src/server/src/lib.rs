@@ -1,5 +1,6 @@
 pub mod config;
 mod error;
+mod expander;
 mod grpc;
 mod http;
 
@@ -9,6 +10,8 @@ use http::HttpServer;
 use sea_orm::{ConnectOptions, Database};
 use std::{net::SocketAddr, sync::Arc};
 use storage::postgres;
+
+use crate::expander::Expander;
 
 #[macro_use]
 extern crate tracing;
@@ -40,6 +43,8 @@ impl Servers {
         let authz_model_writer = storage.clone();
         let tenant_operator = storage.clone();
 
+        let expander = Arc::new(Expander::new(tuple_reader.clone()));
+
         // config distributed: if distributed { remote } else { local }
         // let resolver = Arc::new(checker::RemoteChecker::new());
         let local_checker = Arc::new(checker::LocalChecker::new(None, storage.clone()));
@@ -53,7 +58,8 @@ impl Servers {
                 authz_model_reader,
                 authz_model_writer,
                 tenant_operator,
-                cache_checker.clone(),
+                cache_checker,
+                expander,
             );
             servers.push((Box::new(server), http.addr.parse::<SocketAddr>().unwrap()));
         }

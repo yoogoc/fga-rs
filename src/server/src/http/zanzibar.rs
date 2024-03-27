@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{
     extract::{Path, Query, State},
     Json,
@@ -9,7 +11,10 @@ use serde::{Deserialize, Serialize};
 use storage::{AuthzModelReaderRef, Pagination, RelationshipTupleReaderRef, RelationshipTupleWriterRef, TupleFilter};
 use tracing::Instrument;
 
-use crate::error::Result;
+use crate::{
+    error::Result,
+    expander::{ExpandTree, Expander},
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct ReadResult {
@@ -116,16 +121,25 @@ pub async fn check_x(
 
 #[axum::debug_handler]
 pub async fn expand(
-    State((state, model_reader)): State<(RelationshipTupleReaderRef, AuthzModelReaderRef)>,
+    State((expander, model_reader)): State<(Arc<Expander>, AuthzModelReaderRef)>,
     Path(tenant_id): Path<String>,
     Json(req): Json<ExpandReq>,
-) -> Result<Json<ReadResult>> {
-    let (id, model) = if let Some(model_id) = req.model_id {
+) -> Result<Json<ExpandTree>> {
+    let (_id, model) = if let Some(model_id) = req.model_id {
         model_reader.get(String::from(&tenant_id), model_id).await?
     } else {
         model_reader.get_latest(String::from(&tenant_id)).await?
     };
-    todo!()
+    let result = expander
+        .expand(
+            model.to_typesystem(),
+            tenant_id,
+            req.relation,
+            req.object_type,
+            req.object_id,
+        )
+        .await?;
+    Ok(Json(result))
 }
 
 #[axum::debug_handler]
@@ -133,6 +147,29 @@ pub async fn expand_objects(
     State((state, model_reader)): State<(RelationshipTupleReaderRef, AuthzModelReaderRef)>,
     Path(tenant_id): Path<String>,
     Json(req): Json<ExpandObjectsReq>,
-) -> Result<Json<ReadResult>> {
+) -> Result<Json<()>> {
+    let (_id, model) = if let Some(model_id) = req.model_id {
+        model_reader.get(String::from(&tenant_id), model_id).await?
+    } else {
+        model_reader.get_latest(String::from(&tenant_id)).await?
+    };
+    let _ = state;
+    let _ = model;
+    todo!()
+}
+
+#[axum::debug_handler]
+pub async fn expand_users(
+    State((state, model_reader)): State<(RelationshipTupleReaderRef, AuthzModelReaderRef)>,
+    Path(tenant_id): Path<String>,
+    Json(req): Json<ExpandObjectsReq>,
+) -> Result<Json<()>> {
+    let (_id, model) = if let Some(model_id) = req.model_id {
+        model_reader.get(String::from(&tenant_id), model_id).await?
+    } else {
+        model_reader.get_latest(String::from(&tenant_id)).await?
+    };
+    let _ = state;
+    let _ = model;
     todo!()
 }

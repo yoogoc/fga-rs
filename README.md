@@ -41,7 +41,7 @@ cargo run -p cli -- server -d postgres://postgres@127.0.0.1:5432/fga-rs
 - [ ] remote checker
 - [ ] grpc
 - [x] refactor check request
-- [x] expand tuple
+- [ ] expand tuple
 - [x] opentelemetry
 - [ ] config file use toml
 - [ ] migration database
