@@ -42,8 +42,29 @@ pub struct ExpandReq {
 pub struct ExpandObjectsReq {
     model_id: Option<String>,
     relation: String,
+    object_type: String,
     user_type: String,
     user_id: String,
+    user_relation: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
+pub struct ExpandObjectsResp {
+    object_ids: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
+pub struct ExpandUsersReq {
+    model_id: Option<String>,
+    relation: String,
+    object_type: String,
+    object_id: String,
+    user_type: String,
+    user_relation: Option<String>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
+pub struct ExpandUsersResp {
+    user_ids: Vec<String>,
 }
 
 impl From<(Vec<Tuple>, Option<u64>)> for ReadResult {
@@ -144,32 +165,53 @@ pub async fn expand(
 
 #[axum::debug_handler]
 pub async fn expand_objects(
-    State((state, model_reader)): State<(RelationshipTupleReaderRef, AuthzModelReaderRef)>,
+    State((expander, model_reader)): State<(Arc<Expander>, AuthzModelReaderRef)>,
     Path(tenant_id): Path<String>,
     Json(req): Json<ExpandObjectsReq>,
-) -> Result<Json<()>> {
+) -> Result<Json<ExpandObjectsResp>> {
     let (_id, model) = if let Some(model_id) = req.model_id {
         model_reader.get(String::from(&tenant_id), model_id).await?
     } else {
         model_reader.get_latest(String::from(&tenant_id)).await?
     };
-    let _ = state;
-    let _ = model;
-    todo!()
+
+    let object_ids = expander
+        .objects(
+            model.to_typesystem(),
+            tenant_id,
+            req.relation,
+            req.object_type,
+            req.user_type,
+            req.user_id,
+            req.user_relation,
+        )
+        .await?;
+
+    Ok(Json(ExpandObjectsResp { object_ids }))
 }
 
 #[axum::debug_handler]
 pub async fn expand_users(
-    State((state, model_reader)): State<(RelationshipTupleReaderRef, AuthzModelReaderRef)>,
+    State((expander, model_reader)): State<(Arc<Expander>, AuthzModelReaderRef)>,
     Path(tenant_id): Path<String>,
-    Json(req): Json<ExpandObjectsReq>,
-) -> Result<Json<()>> {
+    Json(req): Json<ExpandUsersReq>,
+) -> Result<Json<ExpandUsersResp>> {
     let (_id, model) = if let Some(model_id) = req.model_id {
         model_reader.get(String::from(&tenant_id), model_id).await?
     } else {
         model_reader.get_latest(String::from(&tenant_id)).await?
     };
-    let _ = state;
-    let _ = model;
-    todo!()
+    let user_ids = expander
+        .users(
+            model.to_typesystem(),
+            tenant_id,
+            req.relation,
+            req.object_type,
+            req.object_id,
+            req.user_type,
+            req.user_relation,
+        )
+        .await?;
+
+    Ok(Json(ExpandUsersResp { user_ids }))
 }

@@ -39,7 +39,9 @@ impl Expander {
     pub fn new(tuple_reader: RelationshipTupleReaderRef) -> Self {
         Self { tuple_reader }
     }
+}
 
+impl Expander {
     pub async fn expand(
         &self,
         typesystem: Typesystem,
@@ -148,5 +150,49 @@ impl Expander {
             }
         }
         .boxed()
+    }
+}
+
+impl Expander {
+    pub async fn objects(
+        &self,
+        typesystem: Typesystem,
+        tenant_id: String,
+        relation: String,
+        object_type: String,
+        user_type: String,
+        user_id: String,
+        user_relation: Option<String>,
+    ) -> Result<Vec<String>> {
+        let _ = typesystem;
+        let _ = tenant_id;
+        let _ = relation;
+        let _ = object_type;
+        let _ = user_type;
+        let _ = user_id;
+        let _ = user_relation;
+        todo!()
+    }
+}
+
+impl Expander {
+    pub async fn users(
+        &self,
+        typesystem: Typesystem,
+        tenant_id: String,
+        relation: String,
+        object_type: String,
+        object_id: String,
+        user_type: String,
+        user_relation: Option<String>,
+    ) -> Result<Vec<String>> {
+        let _ = typesystem;
+        let _ = tenant_id;
+        let _ = relation;
+        let _ = object_type;
+        let _ = user_type;
+        let _ = object_id;
+        let _ = user_relation;
+        todo!()
     }
 }
