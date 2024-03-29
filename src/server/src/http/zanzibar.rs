@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use axum::{
     extract::{Path, Query, State},
@@ -50,7 +50,7 @@ pub struct ExpandObjectsReq {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct ExpandObjectsResp {
-    object_ids: Vec<String>,
+    object_ids: HashSet<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
@@ -64,7 +64,7 @@ pub struct ExpandUsersReq {
 }
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct ExpandUsersResp {
-    user_ids: Vec<String>,
+    user_ids: HashSet<String>,
 }
 
 impl From<(Vec<Tuple>, Option<u64>)> for ReadResult {
