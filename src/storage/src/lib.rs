@@ -26,6 +26,7 @@ pub struct TupleFilter {
     pub user_id_eq: Option<String>,
     pub user_id_in: Option<Vec<String>>,
     pub user_relation_eq: Option<String>,
+    pub user_relation_is_null: Option<bool>,
     pub or: Option<Vec<TupleFilter>>,
 }
 
