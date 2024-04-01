@@ -12,6 +12,7 @@
         "itertools",
         "moka",
         "Redoc",
+        "schemars",
         "tupleset",
         "Typesystem",
         "Unrecognised",
