@@ -377,6 +377,7 @@ impl Expander {
 
         self.userset_to_users(
             &tenant_id,
+            &typesystem,
             &typ.rewrite,
             &relation,
             &object_type,
@@ -390,6 +391,7 @@ impl Expander {
     fn userset_to_users<'a, 'b>(
         &'a self,
         tenant_id: &'b str,
+        typesystem: &'b Typesystem,
         rewrite: &'b Userset,
         relation: &'b str,
         object_type: &'b str,
@@ -403,14 +405,40 @@ impl Expander {
         async move {
             match rewrite {
                 Userset::This => {
-                    // todo if type == user_type
-                    let filter = TupleFilter {
-                        relation_eq: Some(relation.to_string()),
-                        object_type_eq: Some(object_type.to_string()),
-                        object_id_eq: Some(object_id.to_string()),
-                        user_type_eq: Some(user_type.to_string()),
-                        user_relation_eq: user_relation.to_owned(),
-                        ..Default::default()
+                    let rts = typesystem.get_directly_related_types(object_type, relation)?;
+                    let rr = rts
+                        .iter()
+                        .filter(|rr| match rr {
+                            RelationReference::Direct(name) => name.eq(user_type),
+                            RelationReference::Relation { r#type, relation } => {
+                                r#type.eq(user_type)
+                                    && user_relation.is_some()
+                                    && relation.eq(user_relation.as_ref().unwrap())
+                            }
+                            RelationReference::Wildcard(name) => name.eq(user_type),
+                        })
+                        .next();
+                    if rr.is_none() {
+                        return Ok(HashSet::new());
+                    }
+
+                    let rr = rr.unwrap();
+                    let filter = match rr {
+                        RelationReference::Direct(_) | RelationReference::Relation { .. } => TupleFilter {
+                            relation_eq: Some(relation.to_string()),
+                            object_type_eq: Some(object_type.to_string()),
+                            object_id_eq: Some(object_id.to_string()),
+                            user_type_eq: Some(user_type.to_string()),
+                            user_relation_is_null: Some(true),
+                            ..Default::default()
+                        },
+                        RelationReference::Wildcard(_) => TupleFilter {
+                            relation_eq: Some(relation.to_string()),
+                            object_type_eq: Some(object_type.to_string()),
+                            object_id_eq: Some(object_id.to_string()),
+                            user_type_eq: Some(user_type.to_string()),
+                            ..Default::default()
+                        },
                     };
                     let (tuples, _) = self.tuple_reader.clone().list(tenant_id, filter, None).await?;
                     Ok(tuples.iter().map(|t| t.user_id.to_owned()).collect())
@@ -446,6 +474,7 @@ impl Expander {
                     Ok(self
                         .userset_to_users(
                             tenant_id,
+                            typesystem,
                             &userset,
                             &rel.tupleset.relation,
                             object_type,
@@ -461,6 +490,7 @@ impl Expander {
                         user_ids.extend(
                             self.userset_to_users(
                                 tenant_id,
+                                typesystem,
                                 child,
                                 relation,
                                 object_type,
@@ -480,6 +510,7 @@ impl Expander {
                         let child_user_ids = self
                             .userset_to_users(
                                 tenant_id,
+                                typesystem,
                                 child,
                                 relation,
                                 object_type,
@@ -505,6 +536,7 @@ impl Expander {
                     let base_user_ids = self
                         .userset_to_users(
                             tenant_id,
+                            typesystem,
                             base,
                             relation,
                             object_type,
@@ -516,6 +548,7 @@ impl Expander {
                     let subtract_user_ids = self
                         .userset_to_users(
                             tenant_id,
+                            typesystem,
                             subtract,
                             relation,
                             object_type,
