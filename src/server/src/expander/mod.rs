@@ -198,18 +198,7 @@ impl Expander {
             match userset {
                 Userset::This => {
                     let rts = typesystem.get_directly_related_types(object_type, relation)?;
-                    let rr = rts
-                        .iter()
-                        .filter(|rr| match rr {
-                            RelationReference::Direct(name) => name.eq(user_type),
-                            RelationReference::Relation { r#type, relation } => {
-                                r#type.eq(user_type)
-                                    && user_relation.is_some()
-                                    && relation.eq(user_relation.as_ref().unwrap())
-                            }
-                            RelationReference::Wildcard(name) => name.eq(user_type),
-                        })
-                        .next();
+                    let rr = try_get_rr(user_type, user_relation, &rts);
                     if rr.is_none() {
                         return Ok(HashSet::new());
                     }
@@ -406,18 +395,8 @@ impl Expander {
             match rewrite {
                 Userset::This => {
                     let rts = typesystem.get_directly_related_types(object_type, relation)?;
-                    let rr = rts
-                        .iter()
-                        .filter(|rr| match rr {
-                            RelationReference::Direct(name) => name.eq(user_type),
-                            RelationReference::Relation { r#type, relation } => {
-                                r#type.eq(user_type)
-                                    && user_relation.is_some()
-                                    && relation.eq(user_relation.as_ref().unwrap())
-                            }
-                            RelationReference::Wildcard(name) => name.eq(user_type),
-                        })
-                        .next();
+                    let rr = try_get_rr(user_type, user_relation, &rts);
+
                     if rr.is_none() {
                         return Ok(HashSet::new());
                     }
@@ -567,4 +546,22 @@ impl Expander {
         }
         .boxed()
     }
+}
+
+fn try_get_rr<'a>(
+    user_type: &str,
+    user_relation: &Option<String>,
+    rts: &'a Vec<RelationReference>,
+) -> Option<&'a RelationReference> {
+    let rr = rts
+        .iter()
+        .filter(|rr| match rr {
+            RelationReference::Direct(name) => name.eq(user_type),
+            RelationReference::Relation { r#type, relation } => {
+                r#type.eq(user_type) && user_relation.is_some() && relation.eq(user_relation.as_ref().unwrap())
+            }
+            RelationReference::Wildcard(name) => name.eq(user_type),
+        })
+        .next();
+    rr
 }
