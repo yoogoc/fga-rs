@@ -194,160 +194,18 @@ impl Expander {
     where
         'a: 'b,
     {
-        async move {
-            match userset {
-                Userset::This => {
-                    let rts = typesystem.get_directly_related_types(object_type, relation)?;
-                    let rr = try_get_rr(user_type, user_relation, &rts);
-                    if rr.is_none() {
-                        return Ok(HashSet::new());
-                    }
-
-                    let rr = rr.unwrap();
-                    let filter = match rr {
-                        RelationReference::Direct(_) | RelationReference::Relation { .. } => TupleFilter {
-                            relation_eq: Some(relation.to_string()),
-                            object_type_eq: Some(object_type.to_string()),
-                            user_type_eq: Some(user_type.to_string()),
-                            user_id_eq: Some(user_id.to_string()),
-                            user_relation_is_null: Some(true),
-                            ..Default::default()
-                        },
-                        RelationReference::Wildcard(_) => TupleFilter {
-                            relation_eq: Some(relation.to_string()),
-                            object_type_eq: Some(object_type.to_string()),
-                            user_type_eq: Some(user_type.to_string()),
-                            user_id_eq: Some(user_id.to_string()),
-                            ..Default::default()
-                        },
-                    };
-
-                    let (tuples, _) = self.tuple_reader.clone().list(tenant_id, filter, None).await?;
-                    Ok(tuples.iter().map(|t| t.object_id.to_owned()).collect())
-                }
-                Userset::Computed(rel) => {
-                    let filter = TupleFilter {
-                        relation_eq: Some(rel.relation.to_string()),
-                        object_type_eq: Some(rel.object.to_string()),
-                        user_type_eq: Some(user_type.to_string()),
-                        user_id_eq: Some(user_id.to_string()),
-                        user_relation_eq: user_relation.to_owned(),
-                        ..Default::default()
-                    };
-                    let (tuples, _) = self.tuple_reader.clone().list(tenant_id, filter, None).await?;
-                    let computed_object_ids = tuples.iter().map(|t| t.object_id.to_owned()).collect::<Vec<_>>();
-
-                    let filter = TupleFilter {
-                        relation_eq: Some(rel.relation.to_string()),
-                        object_type_eq: Some(object_type.to_string()),
-                        user_type_eq: Some(user_type.to_string()),
-                        user_id_in: Some(computed_object_ids),
-                        ..Default::default()
-                    };
-                    let (tuples, _) = self.tuple_reader.clone().list(tenant_id, filter, None).await?;
-
-                    Ok(tuples.iter().map(|t| t.object_id.to_owned()).collect())
-                }
-                Userset::TupleTo(rel) => {
-                    let userset = Userset::Computed(ObjectRelation {
-                        object: rel.computed_userset.object.to_owned(),
-                        relation: rel.tupleset.relation.to_owned(),
-                    });
-                    Ok(self
-                        .userset_to_objects(
-                            tenant_id,
-                            typesystem,
-                            &userset,
-                            &rel.tupleset.relation,
-                            object_type,
-                            user_type,
-                            user_id,
-                            user_relation,
-                        )
-                        .await?)
-                }
-                Userset::Union { children } => {
-                    let mut object_ids = HashSet::new();
-                    for child in children {
-                        object_ids.extend(
-                            self.userset_to_objects(
-                                tenant_id,
-                                typesystem,
-                                child,
-                                relation,
-                                object_type,
-                                user_type,
-                                user_id,
-                                user_relation,
-                            )
-                            .await?,
-                        )
-                    }
-
-                    Ok(object_ids)
-                }
-                Userset::Intersection { children } => {
-                    let mut object_ids = HashSet::new();
-                    for child in children {
-                        let child_object_ids = self
-                            .userset_to_objects(
-                                tenant_id,
-                                typesystem,
-                                child,
-                                relation,
-                                object_type,
-                                user_type,
-                                user_id,
-                                user_relation,
-                            )
-                            .await?;
-                        if child_object_ids.len() == 0 {
-                            return Ok(HashSet::new());
-                        } else {
-                            object_ids = object_ids
-                                .clone()
-                                .intersection(&child_object_ids)
-                                .map(|x| x.to_owned())
-                                .collect();
-                        }
-                    }
-
-                    Ok(object_ids)
-                }
-                Userset::Difference { base, subtract } => {
-                    let base_object_ids = self
-                        .userset_to_objects(
-                            tenant_id,
-                            typesystem,
-                            base,
-                            relation,
-                            object_type,
-                            user_type,
-                            user_id,
-                            user_relation,
-                        )
-                        .await?;
-                    let subtract_object_ids = self
-                        .userset_to_objects(
-                            tenant_id,
-                            typesystem,
-                            subtract,
-                            relation,
-                            object_type,
-                            user_type,
-                            user_id,
-                            user_relation,
-                        )
-                        .await?;
-
-                    Ok(base_object_ids
-                        .difference(&subtract_object_ids)
-                        .map(|x| x.to_owned())
-                        .collect())
-                }
-            }
-        }
-        .boxed()
+        // async move {
+        // }
+        // .boxed()
+        let _ = tenant_id;
+        let _ = typesystem;
+        let _ = userset;
+        let _ = relation;
+        let _ = object_type;
+        let _ = user_type;
+        let _ = user_id;
+        let _ = user_relation;
+        todo!()
     }
 }
 
@@ -391,160 +249,18 @@ impl Expander {
     where
         'a: 'b,
     {
-        async move {
-            match rewrite {
-                Userset::This => {
-                    let rts = typesystem.get_directly_related_types(object_type, relation)?;
-                    let rr = try_get_rr(user_type, user_relation, &rts);
-
-                    if rr.is_none() {
-                        return Ok(HashSet::new());
-                    }
-
-                    let rr = rr.unwrap();
-                    let filter = match rr {
-                        RelationReference::Direct(_) | RelationReference::Relation { .. } => TupleFilter {
-                            relation_eq: Some(relation.to_string()),
-                            object_type_eq: Some(object_type.to_string()),
-                            object_id_eq: Some(object_id.to_string()),
-                            user_type_eq: Some(user_type.to_string()),
-                            user_relation_is_null: Some(true),
-                            ..Default::default()
-                        },
-                        RelationReference::Wildcard(_) => TupleFilter {
-                            relation_eq: Some(relation.to_string()),
-                            object_type_eq: Some(object_type.to_string()),
-                            object_id_eq: Some(object_id.to_string()),
-                            user_type_eq: Some(user_type.to_string()),
-                            ..Default::default()
-                        },
-                    };
-                    let (tuples, _) = self.tuple_reader.clone().list(tenant_id, filter, None).await?;
-                    Ok(tuples.iter().map(|t| t.user_id.to_owned()).collect())
-                }
-                Userset::Computed(rel) => {
-                    let filter = TupleFilter {
-                        relation_eq: Some(rel.relation.to_string()),
-                        object_type_eq: Some(object_type.to_string()),
-                        object_id_eq: Some(object_id.to_string()),
-                        user_type_eq: Some(rel.object.to_string()),
-                        ..Default::default()
-                    };
-                    let (tuples, _) = self.tuple_reader.clone().list(tenant_id, filter, None).await?;
-                    let computed_user_ids = tuples.iter().map(|t| t.user_id.to_owned()).collect::<Vec<_>>();
-
-                    let filter = TupleFilter {
-                        relation_eq: Some(rel.relation.to_string()),
-                        object_type_eq: Some(object_type.to_string()),
-                        object_id_in: Some(computed_user_ids),
-                        user_type_eq: Some(user_type.to_string()),
-                        user_relation_eq: user_relation.to_owned(),
-                        ..Default::default()
-                    };
-                    let (tuples, _) = self.tuple_reader.clone().list(tenant_id, filter, None).await?;
-
-                    Ok(tuples.iter().map(|t| t.user_id.to_owned()).collect())
-                }
-                Userset::TupleTo(rel) => {
-                    let userset = Userset::Computed(ObjectRelation {
-                        object: rel.computed_userset.object.to_owned(),
-                        relation: rel.tupleset.relation.to_owned(),
-                    });
-                    Ok(self
-                        .userset_to_users(
-                            tenant_id,
-                            typesystem,
-                            &userset,
-                            &rel.tupleset.relation,
-                            object_type,
-                            object_id,
-                            user_type,
-                            user_relation,
-                        )
-                        .await?)
-                }
-                Userset::Union { children } => {
-                    let mut user_ids = HashSet::new();
-                    for child in children {
-                        user_ids.extend(
-                            self.userset_to_users(
-                                tenant_id,
-                                typesystem,
-                                child,
-                                relation,
-                                object_type,
-                                object_id,
-                                user_type,
-                                user_relation,
-                            )
-                            .await?,
-                        )
-                    }
-
-                    Ok(user_ids)
-                }
-                Userset::Intersection { children } => {
-                    let mut user_ids = HashSet::new();
-                    for child in children {
-                        let child_user_ids = self
-                            .userset_to_users(
-                                tenant_id,
-                                typesystem,
-                                child,
-                                relation,
-                                object_type,
-                                object_id,
-                                user_type,
-                                user_relation,
-                            )
-                            .await?;
-                        if child_user_ids.len() == 0 {
-                            return Ok(HashSet::new());
-                        } else {
-                            user_ids = user_ids
-                                .clone()
-                                .intersection(&child_user_ids)
-                                .map(|x| x.to_owned())
-                                .collect();
-                        }
-                    }
-
-                    Ok(user_ids)
-                }
-                Userset::Difference { base, subtract } => {
-                    let base_user_ids = self
-                        .userset_to_users(
-                            tenant_id,
-                            typesystem,
-                            base,
-                            relation,
-                            object_type,
-                            object_id,
-                            user_type,
-                            user_relation,
-                        )
-                        .await?;
-                    let subtract_user_ids = self
-                        .userset_to_users(
-                            tenant_id,
-                            typesystem,
-                            subtract,
-                            relation,
-                            object_type,
-                            object_id,
-                            user_type,
-                            user_relation,
-                        )
-                        .await?;
-
-                    Ok(base_user_ids
-                        .difference(&subtract_user_ids)
-                        .map(|x| x.to_owned())
-                        .collect())
-                }
-            }
-        }
-        .boxed()
+        // async move {
+        // }
+        // .boxed()
+        let _ = tenant_id;
+        let _ = typesystem;
+        let _ = rewrite;
+        let _ = relation;
+        let _ = object_type;
+        let _ = object_id;
+        let _ = user_type;
+        let _ = user_relation;
+        todo!()
     }
 }
 
