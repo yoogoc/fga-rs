@@ -1,10 +1,11 @@
 use anyhow::Result;
-use futures::future::BoxFuture;
+use futures::{future::BoxFuture, FutureExt};
 use std::collections::HashSet;
 
 use protocol::{RelationReference, Typesystem, Userset};
 use storage::RelationshipTupleReaderRef;
 
+#[allow(unused)]
 pub struct UsersExpander {
     tuple_reader: RelationshipTupleReaderRef,
 }
@@ -55,21 +56,97 @@ impl UsersExpander {
     where
         'a: 'b,
     {
-        // async move {
-        // }
-        // .boxed()
-        let _ = tenant_id;
-        let _ = typesystem;
-        let _ = rewrite;
-        let _ = relation;
-        let _ = object_type;
-        let _ = object_id;
-        let _ = user_type;
-        let _ = user_relation;
-        todo!()
+        async move {
+            match rewrite {
+                Userset::This => todo!(),
+                Userset::Computed(_) => todo!(),
+                Userset::TupleTo(_) => todo!(),
+                Userset::Union { children } => {
+                    let mut user_ids = HashSet::new();
+                    for child in children {
+                        user_ids.extend(
+                            self.userset_to_users(
+                                tenant_id,
+                                typesystem,
+                                child,
+                                relation,
+                                object_type,
+                                object_id,
+                                user_type,
+                                user_relation,
+                            )
+                            .await?,
+                        )
+                    }
+
+                    Ok(user_ids)
+                }
+                Userset::Intersection { children } => {
+                    let mut user_ids = HashSet::new();
+                    for child in children {
+                        let child_user_ids = self
+                            .userset_to_users(
+                                tenant_id,
+                                typesystem,
+                                child,
+                                relation,
+                                object_type,
+                                object_id,
+                                user_type,
+                                user_relation,
+                            )
+                            .await?;
+                        if child_user_ids.len() == 0 {
+                            return Ok(HashSet::new());
+                        } else {
+                            user_ids = user_ids
+                                .clone()
+                                .intersection(&child_user_ids)
+                                .map(|x| x.to_owned())
+                                .collect();
+                        }
+                    }
+
+                    Ok(user_ids)
+                }
+                Userset::Difference { base, subtract } => {
+                    let base_user_ids = self
+                        .userset_to_users(
+                            tenant_id,
+                            typesystem,
+                            base,
+                            relation,
+                            object_type,
+                            object_id,
+                            user_type,
+                            user_relation,
+                        )
+                        .await?;
+                    let subtract_user_ids = self
+                        .userset_to_users(
+                            tenant_id,
+                            typesystem,
+                            subtract,
+                            relation,
+                            object_type,
+                            object_id,
+                            user_type,
+                            user_relation,
+                        )
+                        .await?;
+
+                    Ok(base_user_ids
+                        .difference(&subtract_user_ids)
+                        .map(|x| x.to_owned())
+                        .collect())
+                }
+            }
+        }
+        .boxed()
     }
 }
 
+#[allow(unused)]
 fn try_get_rr<'a>(
     user_type: &str,
     user_relation: &Option<String>,
