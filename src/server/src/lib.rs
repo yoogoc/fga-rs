@@ -11,7 +11,7 @@ use sea_orm::{ConnectOptions, Database};
 use std::{net::SocketAddr, sync::Arc};
 use storage::postgres;
 
-use crate::expander::Expander;
+use crate::expander::{Expander, ObjectsExpander, UsersExpander};
 
 #[macro_use]
 extern crate tracing;
@@ -44,6 +44,8 @@ impl Servers {
         let tenant_operator = storage.clone();
 
         let expander = Arc::new(Expander::new(tuple_reader.clone()));
+        let objects_expander = Arc::new(ObjectsExpander::new(tuple_reader.clone()));
+        let users_expander = Arc::new(UsersExpander::new(tuple_reader.clone()));
 
         // config distributed: if distributed { remote } else { local }
         // let resolver = Arc::new(checker::RemoteChecker::new());
@@ -60,6 +62,8 @@ impl Servers {
                 tenant_operator,
                 cache_checker,
                 expander,
+                objects_expander,
+                users_expander,
             );
             servers.push((Box::new(server), http.addr.parse::<SocketAddr>().unwrap()));
         }

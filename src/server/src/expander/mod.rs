@@ -1,11 +1,15 @@
-use std::collections::HashSet;
+mod objects;
+mod users;
 
 use anyhow::Result;
 use futures::{future::BoxFuture, FutureExt};
-use protocol::{ObjectRelation, RelationReference, Typesystem, Userset};
+use protocol::{Typesystem, Userset};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use storage::{RelationshipTupleReaderRef, TupleFilter};
+
+pub use objects::ObjectsExpander;
+pub use users::UsersExpander;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct ExpandTreeNode {
@@ -153,131 +157,4 @@ impl Expander {
         }
         .boxed()
     }
-}
-
-impl Expander {
-    pub async fn objects(
-        &self,
-        typesystem: Typesystem,
-        tenant_id: String,
-        relation: String,
-        object_type: String,
-        user_type: String,
-        user_id: String,
-        user_relation: Option<String>,
-    ) -> Result<HashSet<String>> {
-        let typ = typesystem.get_relation(&object_type, &relation)?;
-
-        self.userset_to_objects(
-            &tenant_id,
-            &typesystem,
-            &typ.rewrite,
-            &relation,
-            &object_type,
-            &user_type,
-            &user_id,
-            &user_relation,
-        )
-        .await
-    }
-    fn userset_to_objects<'a, 'b>(
-        &'a self,
-        tenant_id: &'b str,
-        typesystem: &'b Typesystem,
-        userset: &'b Userset,
-        relation: &'b str,
-        object_type: &'b str,
-        user_type: &'b str,
-        user_id: &'b str,
-        user_relation: &'b Option<String>,
-    ) -> BoxFuture<'b, Result<HashSet<String>>>
-    where
-        'a: 'b,
-    {
-        // async move {
-        // }
-        // .boxed()
-        let _ = tenant_id;
-        let _ = typesystem;
-        let _ = userset;
-        let _ = relation;
-        let _ = object_type;
-        let _ = user_type;
-        let _ = user_id;
-        let _ = user_relation;
-        todo!()
-    }
-}
-
-impl Expander {
-    pub async fn users(
-        &self,
-        typesystem: Typesystem,
-        tenant_id: String,
-        relation: String,
-        object_type: String,
-        object_id: String,
-        user_type: String,
-        user_relation: Option<String>,
-    ) -> Result<HashSet<String>> {
-        let typ = typesystem.get_relation(&object_type, &relation)?;
-
-        self.userset_to_users(
-            &tenant_id,
-            &typesystem,
-            &typ.rewrite,
-            &relation,
-            &object_type,
-            &object_id,
-            &user_type,
-            &user_relation,
-        )
-        .await
-    }
-
-    fn userset_to_users<'a, 'b>(
-        &'a self,
-        tenant_id: &'b str,
-        typesystem: &'b Typesystem,
-        rewrite: &'b Userset,
-        relation: &'b str,
-        object_type: &'b str,
-        object_id: &'b str,
-        user_type: &'b str,
-        user_relation: &'b Option<String>,
-    ) -> BoxFuture<'b, Result<HashSet<String>>>
-    where
-        'a: 'b,
-    {
-        // async move {
-        // }
-        // .boxed()
-        let _ = tenant_id;
-        let _ = typesystem;
-        let _ = rewrite;
-        let _ = relation;
-        let _ = object_type;
-        let _ = object_id;
-        let _ = user_type;
-        let _ = user_relation;
-        todo!()
-    }
-}
-
-fn try_get_rr<'a>(
-    user_type: &str,
-    user_relation: &Option<String>,
-    rts: &'a Vec<RelationReference>,
-) -> Option<&'a RelationReference> {
-    let rr = rts
-        .iter()
-        .filter(|rr| match rr {
-            RelationReference::Direct(name) => name.eq(user_type),
-            RelationReference::Relation { r#type, relation } => {
-                r#type.eq(user_type) && user_relation.is_some() && relation.eq(user_relation.as_ref().unwrap())
-            }
-            RelationReference::Wildcard(name) => name.eq(user_type),
-        })
-        .next();
-    rr
 }

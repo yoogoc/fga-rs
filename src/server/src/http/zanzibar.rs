@@ -13,7 +13,7 @@ use tracing::Instrument;
 
 use crate::{
     error::Result,
-    expander::{ExpandTree, Expander},
+    expander::{ExpandTree, Expander, ObjectsExpander, UsersExpander},
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
@@ -165,7 +165,7 @@ pub async fn expand(
 
 #[axum::debug_handler]
 pub async fn expand_objects(
-    State((expander, model_reader)): State<(Arc<Expander>, AuthzModelReaderRef)>,
+    State((expander, model_reader)): State<(Arc<ObjectsExpander>, AuthzModelReaderRef)>,
     Path(tenant_id): Path<String>,
     Json(req): Json<ExpandObjectsReq>,
 ) -> Result<Json<ExpandObjectsResp>> {
@@ -192,7 +192,7 @@ pub async fn expand_objects(
 
 #[axum::debug_handler]
 pub async fn expand_users(
-    State((expander, model_reader)): State<(Arc<Expander>, AuthzModelReaderRef)>,
+    State((expander, model_reader)): State<(Arc<UsersExpander>, AuthzModelReaderRef)>,
     Path(tenant_id): Path<String>,
     Json(req): Json<ExpandUsersReq>,
 ) -> Result<Json<ExpandUsersResp>> {
