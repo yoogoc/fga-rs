@@ -31,6 +31,13 @@ pub fn filter_to_conds(filter: &TupleFilter) -> Condition {
     if let Some(user_relation_eq) = &filter.user_relation_eq {
         condition = condition.add(tuple::Column::UserRelation.eq(user_relation_eq.to_owned()));
     }
+    if let Some(user_relation_is_null) = &filter.user_relation_is_null {
+        if user_relation_is_null.to_owned() {
+            condition = condition.add(tuple::Column::UserRelation.is_null());
+        } else {
+            condition = condition.add(tuple::Column::UserRelation.is_not_null());
+        }
+    }
     if let Some(or) = &filter.or {
         if !or.is_empty() {
             let mut or_conds = Condition::any();

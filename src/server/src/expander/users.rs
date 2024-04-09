@@ -2,7 +2,7 @@ use anyhow::Result;
 use futures::{future::BoxFuture, FutureExt};
 use std::collections::HashSet;
 
-use protocol::{RelationReference, Typesystem, Userset};
+use protocol::{Typesystem, Userset};
 use storage::RelationshipTupleReaderRef;
 
 #[allow(unused)]
@@ -144,23 +144,4 @@ impl UsersExpander {
         }
         .boxed()
     }
-}
-
-#[allow(unused)]
-fn try_get_rr<'a>(
-    user_type: &str,
-    user_relation: &Option<String>,
-    rts: &'a Vec<RelationReference>,
-) -> Option<&'a RelationReference> {
-    let rr = rts
-        .iter()
-        .filter(|rr| match rr {
-            RelationReference::Direct(name) => name.eq(user_type),
-            RelationReference::Relation { r#type, relation } => {
-                r#type.eq(user_type) && user_relation.is_some() && relation.eq(user_relation.as_ref().unwrap())
-            }
-            RelationReference::Wildcard(name) => name.eq(user_type),
-        })
-        .next();
-    rr
 }
