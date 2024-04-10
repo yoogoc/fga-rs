@@ -5,6 +5,8 @@ use std::collections::HashSet;
 use protocol::{RelationReference, Typesystem, Userset};
 use storage::{RelationshipTupleReaderRef, TupleFilter};
 
+use crate::expander::error::ExpanderError;
+
 #[allow(unused)]
 pub struct ObjectsExpander {
     tuple_reader: RelationshipTupleReaderRef,
@@ -169,33 +171,44 @@ impl ObjectsExpander {
                 }
                 Userset::TupleTo(ttu) => {
                     let rel = typesystem.get_relation(object_type, &ttu.tupleset.relation)?;
-                    let mid_object_ids = self
-                        .userset_to_objects(
-                            tenant_id,
-                            typesystem,
-                            &rel.rewrite,
-                            &ttu.computed_userset.relation,
-                            object_type,
-                            user_type,
-                            user_id,
-                            user_relation,
-                        )
-                        .await?;
-                    for mid_object_id in mid_object_ids {
-                        let _object_ids = self
-                            .userset_to_objects(
-                                tenant_id,
-                                typesystem,
-                                &rel.rewrite,
-                                &ttu.computed_userset.relation,
-                                object_type,
-                                user_type,
-                                &mid_object_id,
-                                user_relation,
-                            )
-                            .await?;
+                    let rts = typesystem.get_directly_related_types(object_type, &ttu.tupleset.relation)?;
+                    let mut object_ids = HashSet::new();
+                    for rt in rts {
+                        match rt {
+                            RelationReference::Direct(ot) => {
+                                let mid_object_ids = self
+                                    .userset_to_objects(
+                                        tenant_id,
+                                        typesystem,
+                                        &rel.rewrite,
+                                        &ttu.computed_userset.relation,
+                                        &ot,
+                                        user_type,
+                                        user_id,
+                                        user_relation,
+                                    )
+                                    .await?;
+                                let filter = TupleFilter {
+                                    object_type_eq: Some(object_type.to_owned()),
+                                    relation_eq: Some(ttu.tupleset.relation.clone()),
+                                    user_type_eq: Some(ot.clone()),
+                                    user_id_in: Some(mid_object_ids.into_iter().collect()),
+                                    user_relation_is_null: Some(true),
+                                    ..Default::default()
+                                };
+                                let (tuples, _) = self.tuple_reader.clone().list(tenant_id, filter, None).await?;
+                                object_ids.extend(tuples.iter().map(|t| t.object_id.to_owned()));
+                            }
+                            RelationReference::Wildcard(_) | RelationReference::Relation { .. } => {
+                                return Err(ExpanderError::NotOnlyDirect {
+                                    tupleset: ttu.tupleset.relation.clone(),
+                                }
+                                .into());
+                            }
+                        }
                     }
-                    todo!()
+
+                    Ok(object_ids)
                 }
                 Userset::Union { children } => {
                     let mut object_ids = HashSet::new();
