@@ -96,10 +96,10 @@ impl LocalChecker {
                     }
                 }
                 RelationReference::Relation { r#type, relation } => {
-                    if r#type.eq(&req.tuple_key.user_type) && relation.eq(&req.tuple_key.user_relation) {
+                    if !r#type.eq(&req.tuple_key.user_type) {
                         Some(TupleFilter {
-                            user_type_eq: Some(String::from(&req.tuple_key.user_type)),
-                            user_relation_eq: Some(String::from(&req.tuple_key.user_relation)),
+                            user_type_eq: Some(String::from(r#type)),
+                            user_relation_eq: Some(String::from(relation)),
                             ..Default::default()
                         })
                     } else {
