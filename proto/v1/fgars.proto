@@ -1,0 +1,32 @@
+syntax = "proto3";
+package fgars.v1;
+
+service FgarsService {
+  rpc Check (CheckRequest) returns (CheckReply);
+}
+
+message TupleKey {
+  string user_type = 1;
+  string user_id = 2;
+  string user_relation = 3;
+  string relation = 4;
+  string object_type = 5;
+  string object_id = 6;
+}
+
+message ResolutionMetadata {
+  uint32 depth = 1;
+  uint32 datastore_query_count = 2;
+}
+
+message CheckRequest {
+  string tenant_id = 1;
+  optional string model_id = 2;
+  TupleKey tuple_key = 3;
+  repeated TupleKey contextual_tuples = 4;
+}
+
+message CheckReply {
+  bool allow = 1;
+  ResolutionMetadata resolution_metadata = 2;
+}

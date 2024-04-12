@@ -13,6 +13,7 @@
         "moka",
         "Redoc",
         "schemars",
+        "sqlx",
         "tupleset",
         "Typesystem",
         "Unrecognised",

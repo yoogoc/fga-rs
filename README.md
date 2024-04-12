@@ -38,10 +38,10 @@ cargo run -p cli -- server -d postgres://postgres@127.0.0.1:5432/fga-rs
 - [x] schema: design(such as model.authz), parser(use lalrpop)
 - [x] schema: support permission: union(+ |), intersection(&), exclude(-), priority
 - [ ] support condition(expr eval)
-- [ ] remote checker
-- [ ] grpc
+- [x] remote checker
+- [x] grpc
 - [x] refactor check request
-- [ ] expand tuple
+- [x] expand tuple
 - [x] opentelemetry
 - [ ] config file use toml
 - [ ] migration database

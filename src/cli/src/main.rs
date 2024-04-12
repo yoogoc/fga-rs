@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use server::{
-    config::{Config, Datasource, HttpConfig},
+    config::{Config, Datasource, GrpcConfig, HttpConfig},
     Servers,
 };
 
@@ -18,8 +18,8 @@ enum Commands {
         #[arg(default_value_t = http_default_addr(), short='a', long)]
         http_addr: String,
         // http_timeout: Option<Duration>,
-        // #[arg(default_value = "0.0.0.0:5556")]
-        // grpc_addr: Option<String>,
+        #[arg(default_value_t = grpc_default_addr(), short='g', long)]
+        grpc_addr: String,
         #[arg(short = 'd')]
         db: String,
     },
@@ -35,7 +35,7 @@ async fn main() -> anyhow::Result<()> {
         Commands::Server {
             http_addr,
             // http_timeout,
-            // grpc_addr,
+            grpc_addr,
             db,
         } => {
             let mut config = Config {
@@ -46,9 +46,10 @@ async fn main() -> anyhow::Result<()> {
                 addr: http_addr,
                 ..Default::default() // timeout: http_timeout,
             });
-            // if let Some(_grpc_addr) = grpc_addr {
-            //     todo!()
-            // }
+            config.grpc = Some(GrpcConfig {
+                addr: grpc_addr,
+                ..Default::default() // timeout: grpc_timeout,
+            });
             let servers = Servers::new(config).await;
             servers.start().await?;
         }
@@ -58,4 +59,8 @@ async fn main() -> anyhow::Result<()> {
 
 fn http_default_addr() -> String {
     String::from("0.0.0.0:5555")
+}
+
+fn grpc_default_addr() -> String {
+    String::from("0.0.0.0:5556")
 }

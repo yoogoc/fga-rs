@@ -18,7 +18,7 @@ pub struct HttpConfig {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct GrpcConfig {
-    addr: String,
+    pub addr: String,
     #[serde(with = "humantime_serde")]
     pub timeout: Option<Duration>,
 }

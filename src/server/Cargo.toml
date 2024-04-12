@@ -10,12 +10,14 @@ checker = { path = "../checker"}
 storage = { path = "../storage"}
 protocol = { path = "../protocol"}
 schema = { path = "../schema"}
+proto = { path = "../proto"}
 
 sea-orm = { workspace = true }
 tokio = { workspace = true }
 async-trait = { workspace = true }
 futures = { workspace = true }
 tonic = { workspace = true }
+tonic-reflection = { workspace = true }
 axum = { workspace = true, features = ["tokio", "macros"] }
 anyhow = { workspace = true }
 thiserror = { workspace = true }

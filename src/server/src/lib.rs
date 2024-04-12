@@ -11,7 +11,10 @@ use sea_orm::{ConnectOptions, Database};
 use std::{net::SocketAddr, sync::Arc};
 use storage::postgres;
 
-use crate::expander::{Expander, ObjectsExpander, UsersExpander};
+use crate::{
+    expander::{Expander, ObjectsExpander, UsersExpander},
+    grpc::GrpcServer,
+};
 
 #[macro_use]
 extern crate tracing;
@@ -57,16 +60,21 @@ impl Servers {
             let server = HttpServer::new(
                 tuple_reader,
                 tuple_writer,
-                authz_model_reader,
+                authz_model_reader.clone(),
                 authz_model_writer,
                 tenant_operator,
-                cache_checker,
+                cache_checker.clone(),
                 expander,
                 objects_expander,
                 users_expander,
             );
             servers.push((Box::new(server), http.addr.parse::<SocketAddr>().unwrap()));
         }
+        if let Some(grpc) = &config.grpc {
+            let server = GrpcServer::new(cache_checker.clone(), authz_model_reader.clone());
+            servers.push((Box::new(server), grpc.addr.parse::<SocketAddr>().unwrap()));
+        }
+
         Self { servers }
     }
 
