@@ -640,6 +640,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tonic",
+ "tower",
  "tracing",
 ]
 

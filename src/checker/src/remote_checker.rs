@@ -2,7 +2,8 @@ use async_trait::async_trait;
 use proto::fgars_service_client::FgarsServiceClient;
 use proto::{CheckRequest as ProtoCheckRequest, TupleKey};
 use tokio::sync::RwLock;
-use tonic::transport::Channel;
+use tonic::transport::{Channel, Endpoint};
+use tower::discover::Change;
 
 use crate::graph::ResolutionMetadata;
 use crate::{CheckRequest, CheckResult, Checker};
@@ -13,7 +14,14 @@ pub struct RemoteChecker {
 
 impl RemoteChecker {
     pub async fn new(addr: String) -> Self {
-        let client = FgarsServiceClient::connect(addr).await.unwrap();
+        // TODO load balance, add crate
+        let (channel, sender) = Channel::balance_channel(1024);
+        sender
+            .send(Change::Insert(addr.clone(), Endpoint::from_shared(addr).unwrap()))
+            .await
+            .unwrap();
+
+        let client = FgarsServiceClient::new(channel);
         Self {
             client: RwLock::new(client),
         }
