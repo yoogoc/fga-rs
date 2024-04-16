@@ -5,7 +5,6 @@ use std::collections::HashSet;
 use protocol::{Typesystem, Userset};
 use storage::RelationshipTupleReaderRef;
 
-#[allow(unused)]
 pub struct UsersExpander {
     tuple_reader: RelationshipTupleReaderRef,
 }
@@ -58,8 +57,26 @@ impl UsersExpander {
     {
         async move {
             match rewrite {
-                Userset::This => todo!(),
-                Userset::Computed(_) => todo!(),
+                Userset::This => {
+                    let _ = self.tuple_reader;
+                    todo!()
+                }
+                Userset::Computed(or) => {
+                    let relation = typesystem.get_relation(object_type, &or.relation)?;
+                    let user_ids = self
+                        .userset_to_users(
+                            tenant_id,
+                            typesystem,
+                            &relation.rewrite,
+                            &or.relation,
+                            object_type,
+                            object_id,
+                            user_type,
+                            user_relation,
+                        )
+                        .await?;
+                    Ok(user_ids)
+                }
                 Userset::TupleTo(_) => todo!(),
                 Userset::Union { children } => {
                     let mut user_ids = HashSet::new();
