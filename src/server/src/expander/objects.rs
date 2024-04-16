@@ -7,7 +7,6 @@ use storage::{RelationshipTupleReaderRef, TupleFilter};
 
 use crate::expander::error::ExpanderError;
 
-#[allow(unused)]
 pub struct ObjectsExpander {
     tuple_reader: RelationshipTupleReaderRef,
 }
