@@ -80,7 +80,7 @@ impl ObjectsExpander {
                                         };
                                         let (tuples, _) =
                                             self.tuple_reader.clone().list(tenant_id, filter, None).await?;
-                                        object_ids.extend(tuples.iter().map(|t| t.object_id.to_owned()));
+                                        object_ids.extend(tuples.into_iter().map(|t| t.object_id));
                                     } else {
                                         continue;
                                     }
@@ -93,7 +93,7 @@ impl ObjectsExpander {
                                         ..Default::default()
                                     };
                                     let (tuples, _) = self.tuple_reader.clone().list(tenant_id, filter, None).await?;
-                                    object_ids.extend(tuples.iter().map(|t| t.object_id.to_owned()));
+                                    object_ids.extend(tuples.into_iter().map(|t| t.object_id));
                                 }
                             } else {
                                 let filter = TupleFilter {
@@ -104,7 +104,7 @@ impl ObjectsExpander {
                                     ..Default::default()
                                 };
                                 let (tuples, _) = self.tuple_reader.clone().list(tenant_id, filter, None).await?;
-                                object_ids.extend(tuples.iter().map(|t| t.object_id.to_owned()));
+                                object_ids.extend(tuples.into_iter().map(|t| t.object_id));
                             }
                         } else {
                             // type is difference, but rt_user_relation exists
@@ -196,7 +196,7 @@ impl ObjectsExpander {
                                     ..Default::default()
                                 };
                                 let (tuples, _) = self.tuple_reader.clone().list(tenant_id, filter, None).await?;
-                                object_ids.extend(tuples.iter().map(|t| t.object_id.to_owned()));
+                                object_ids.extend(tuples.into_iter().map(|t| t.object_id));
                             }
                             RelationReference::Wildcard(_) | RelationReference::Relation { .. } => {
                                 return Err(ExpanderError::NotOnlyDirect {
