@@ -1,20 +1,17 @@
 pub mod config;
 mod error;
-mod expander;
 mod grpc;
 mod http;
 
 use anyhow::Result;
+use checker::expander::{Expander, ObjectsExpander, UsersExpander};
 use config::Config;
 use http::HttpServer;
 use sea_orm::{ConnectOptions, Database};
 use std::{net::SocketAddr, sync::Arc};
-use storage::postgres;
+use storage::sea;
 
-use crate::{
-    expander::{Expander, ObjectsExpander, UsersExpander},
-    grpc::GrpcServer,
-};
+use crate::grpc::GrpcServer;
 
 #[macro_use]
 extern crate tracing;
@@ -39,7 +36,7 @@ impl Servers {
         let mut options = ConnectOptions::new(&config.datasource.uri);
         options.sqlx_logging_level(log::LevelFilter::Debug);
         let conn = Database::connect(options).await.unwrap();
-        let storage = Arc::new(postgres::Storage::new(Arc::new(conn)));
+        let storage = Arc::new(sea::Storage::new(Arc::new(conn)));
         let tuple_reader = storage.clone();
         let tuple_writer = storage.clone();
         let authz_model_reader = storage.clone();

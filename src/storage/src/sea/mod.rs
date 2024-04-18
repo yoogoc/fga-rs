@@ -1,7 +1,7 @@
-mod authz_model;
+pub mod authz_model;
 mod helper;
 mod tenant;
-mod tuple;
+pub mod tuple;
 
 use std::sync::Arc;
 
@@ -14,7 +14,7 @@ use sea_orm::*;
 use sea_orm::{sea_query::all, DbConn};
 
 use crate::error::StorageError;
-use crate::postgres::tuple::ActiveModel;
+use crate::sea::tuple::ActiveModel;
 use crate::{
     AuthzModelReader, AuthzModelWriter, Pagination, RelationshipTupleReader, RelationshipTupleWriter, TenantOperator,
     TupleFilter,

@@ -1,6 +1,7 @@
 [
   {
     "tenant_id": "1",
-    "dsl": "// comment: model define\n// define user type, no relation, no permission\ntype user {}\ntype block {\n  relation assignment: user\n}\n// define group type, has a relation\ntype group {\n  relation member: user\n}\n// define group type, has some relations and some permissions\ntype folder {\n  relation owner: user\n  relation parent: folder\n  relation viewer: user | user#* | group#member | owner | parent#viewer\n}"
+    "id": "1",
+    "dsl": "// comment: model define\n// define user type, no relation, no permission\ntype user {}\ntype block {\n  relation assignment: user\n}\n// define group type, has a relation\ntype group {\n  relation member: user\n}\n// define group type, has some relations and some permissions\ntype folder {\n  relation owner: user\n  relation parent: folder\n  relation viewer: user | user#* | group#member\n permission view: viewer + owner + parent#viewer\n}"
   }
 ]

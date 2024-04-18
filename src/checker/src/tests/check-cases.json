@@ -1,0 +1,13 @@
+[
+  {
+    "tuple": {
+      "user_type": "user",
+      "user_id": "2",
+      "user_relation": "",
+      "relation": "viewer",
+      "object_type": "folder",
+      "object_id": "1"
+    },
+    "allow": true
+  }
+]

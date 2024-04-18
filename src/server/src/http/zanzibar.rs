@@ -4,17 +4,17 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
-use checker::{CheckRequest, CheckResult, CheckerRef};
+use checker::{
+    expander::{ExpandTree, Expander, ObjectsExpander, UsersExpander},
+    CheckRequest, CheckResult, CheckerRef,
+};
 use protocol::{Tuple, TupleKey};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use storage::{AuthzModelReaderRef, Pagination, RelationshipTupleReaderRef, RelationshipTupleWriterRef, TupleFilter};
 use tracing::Instrument;
 
-use crate::{
-    error::Result,
-    expander::{ExpandTree, Expander, ObjectsExpander, UsersExpander},
-};
+use crate::error::Result;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct ReadResult {

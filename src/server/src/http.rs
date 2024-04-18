@@ -11,7 +11,10 @@ use aide::{
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tower_http::trace::TraceLayer;
 
-use checker::CheckerRef;
+use checker::{
+    expander::{Expander, ObjectsExpander, UsersExpander},
+    CheckerRef,
+};
 use futures::FutureExt;
 use serde::{Deserialize, Serialize};
 use storage::{
@@ -19,11 +22,7 @@ use storage::{
 };
 use tokio::sync::oneshot::{self, Sender};
 
-use crate::{
-    error::ServerError,
-    expander::{Expander, ObjectsExpander, UsersExpander},
-    Server,
-};
+use crate::{error::ServerError, Server};
 use anyhow::{ensure, Result};
 use async_trait::async_trait;
 use axum::{extract::MatchedPath, http::Request, routing::get, Extension, Json, Router};

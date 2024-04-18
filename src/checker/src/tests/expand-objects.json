@@ -1,0 +1,11 @@
+[
+  {
+    "tuple": {
+      "user_id": "2",
+      "object_type": "folder",
+      "relation": "viewer",
+      "user_type": "user"
+    },
+    "object_ids": ["1"]
+  }
+]

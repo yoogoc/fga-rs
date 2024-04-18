@@ -1,4 +1,5 @@
 pub mod cache_checker;
+pub mod expander;
 pub mod local_checker;
 pub mod remote_checker;
 mod stream;
@@ -13,7 +14,7 @@ mod graph;
 #[macro_use]
 extern crate tracing;
 
-#[test]
+#[cfg(test)]
 mod tests;
 
 use std::{collections::HashSet, sync::Arc};
@@ -38,7 +39,7 @@ pub struct CheckRequest {
     pub visited_paths: HashSet<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Copy, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Copy, Serialize, Deserialize, JsonSchema, Default)]
 pub struct CheckResult {
     pub allow: bool,
     pub resolution_metadata: ResolutionMetadata,

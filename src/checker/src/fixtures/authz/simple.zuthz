@@ -16,5 +16,6 @@ type group {
 type folder {
   relation owner: user
   relation parent: folder
-  relation viewer: user | user#* | group#member | owner | parent#viewer
+  relation viewer: user | user#* | group#member
+  permission view: viewer | owner | parent#viewer
 }

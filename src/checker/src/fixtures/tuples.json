@@ -1,31 +1,24 @@
 [
   {
-    "tenant_id": "1",
-    "tuples": [
-      {
-        "user_type": "user",
-        "user_id": "1",
-        "user_relation": "",
-        "relation": "assignment",
-        "object_type": "block",
-        "object_id": "1"
-      },
-      {
-        "user_type": "user",
-        "user_id": "2",
-        "user_relation": "",
-        "relation": "member",
-        "object_type": "group",
-        "object_id": "1"
-      },
-      {
-        "user_type": "group",
-        "user_id": "1",
-        "user_relation": "member",
-        "relation": "viewer",
-        "object_type": "folder",
-        "object_id": "1"
-      }
-    ]
+    "user_type": "user",
+    "user_id": "1",
+    "relation": "assignment",
+    "object_type": "block",
+    "object_id": "1"
+  },
+  {
+    "user_type": "user",
+    "user_id": "2",
+    "relation": "member",
+    "object_type": "group",
+    "object_id": "1"
+  },
+  {
+    "user_type": "group",
+    "user_id": "1",
+    "user_relation": "member",
+    "relation": "viewer",
+    "object_type": "folder",
+    "object_id": "1"
   }
 ]

@@ -1,5 +1,5 @@
 mod error;
-pub mod postgres;
+pub mod sea;
 
 use std::sync::Arc;
 
