@@ -17,5 +17,5 @@ type folder {
   relation owner: user
   relation parent: folder
   relation viewer: user | user#* | group#member
-  permission view: viewer | owner | parent#viewer
+  permission view: viewer + owner + parent#viewer
 }
