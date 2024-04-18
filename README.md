@@ -45,8 +45,7 @@ cargo run -p cli -- server -d postgres://postgres@127.0.0.1:5432/fga-rs
 - [x] opentelemetry
 - [ ] config file use toml
 - [ ] migration database
-- [ ] unit test
-- [ ] e2e test
+- [x] test
 - [ ] playground
 - [ ] vscode-extension
 - [ ] lsp

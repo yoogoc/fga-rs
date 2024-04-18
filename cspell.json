@@ -11,6 +11,7 @@
         "humantime",
         "itertools",
         "moka",
+        "opentelemetry",
         "Redoc",
         "schemars",
         "sqlx",
