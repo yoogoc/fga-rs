@@ -24,6 +24,6 @@ protocol = { path = "../protocol" }
 storage = { path = "../storage" }
 proto = { path = "../proto" }
 
-# [dev-dependencies]
+[dev-dependencies]
 sea-orm = { workspace = true }
 schema = { path = "../schema" }
