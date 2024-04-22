@@ -1,0 +1,9 @@
+[package]
+name = "migration"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+async-std = { workspace = true }
+sea-orm-migration = { workspace = true }
+sea-orm-cli = { workspace = true }
