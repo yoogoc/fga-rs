@@ -34,6 +34,7 @@ impl Servers {
     pub async fn new(config: Config) -> Self {
         info!("init servers");
         let mut options = ConnectOptions::new(&config.datasource.uri);
+        options.set_schema_search_path(&config.datasource.schema);
         options.sqlx_logging_level(log::LevelFilter::Debug);
         let conn = Database::connect(options).await.unwrap();
         let storage = Arc::new(sea::Storage::new(Arc::new(conn)));

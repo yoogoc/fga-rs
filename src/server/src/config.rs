@@ -26,4 +26,5 @@ pub struct GrpcConfig {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct Datasource {
     pub uri: String,
+    pub schema: String,
 }

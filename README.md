@@ -21,16 +21,16 @@ fga-rs is a permission server for real time, enterprise application permissions 
 1. [rust](https://www.rust-lang.org/)
 2. [postgres](https://postgresql.org/)
 
-### init db(wip)
+### init db
 
 ```shell
-psql -d fga-rs -a -f init.sql
+cargo run -p cli -- migration up -u postgres://postgres@127.0.0.1:5432/fga-rs
 ```
 
 ### start
 
 ```shell
-cargo run -p cli -- server -d postgres://postgres@127.0.0.1:5432/fga-rs
+cargo run -p cli -- server -u postgres://postgres@127.0.0.1:5432/fga-rs
 ```
 
 ## TODO
@@ -44,7 +44,7 @@ cargo run -p cli -- server -d postgres://postgres@127.0.0.1:5432/fga-rs
 - [x] expand tuple
 - [x] opentelemetry
 - [ ] config file use toml
-- [ ] migration database
+- [x] migration database
 - [x] test
 - [ ] playground
 - [ ] vscode-extension

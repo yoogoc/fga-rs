@@ -11,5 +11,7 @@ tokio = { workspace = true }
 anyhow = { workspace = true }
 env_logger = { workspace = true }
 tracing-subscriber = { workspace = true }
+sea-orm-cli = { workspace = true }
 
 server = { path = "../server"}
+migration = { path = "../migration"}

@@ -912,6 +912,8 @@ dependencies = [
  "anyhow",
  "clap",
  "env_logger",
+ "migration",
+ "sea-orm-cli",
  "server",
  "tokio",
  "tracing-subscriber",
