@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use proto::fgars_service_client::FgarsServiceClient;
 use proto::{CheckRequest as ProtoCheckRequest, TupleKey};
-use tokio::sync::RwLock;
 use tonic::transport::{Channel, Endpoint};
 use tower::discover::Change;
 
@@ -9,7 +8,7 @@ use crate::graph::ResolutionMetadata;
 use crate::{CheckRequest, CheckResult, Checker};
 
 pub struct RemoteChecker {
-    client: RwLock<FgarsServiceClient<Channel>>,
+    client: FgarsServiceClient<Channel>,
 }
 
 impl RemoteChecker {
@@ -22,9 +21,7 @@ impl RemoteChecker {
             .unwrap();
 
         let client = FgarsServiceClient::new(channel);
-        Self {
-            client: RwLock::new(client),
-        }
+        Self { client }
     }
 }
 
@@ -43,7 +40,7 @@ impl Checker for RemoteChecker {
                 object_id: ct.object_id,
             })
             .collect();
-        let mut client = self.client.write().await;
+        let mut client = self.client.clone();
         let reply = client
             .check(ProtoCheckRequest {
                 tenant_id: req.tenant_id,
