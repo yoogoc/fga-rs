@@ -15,6 +15,7 @@ Type: Type = {
   <l:@L> "type" <n:identifier> "{" <rops:IRelationOrPermissions> "}" <r:@R> => Type::new(n.to_string(), rops),
   <l:@L> "type" <n:identifier> "{" "}" <r:@R> => Type::new(n.to_string(), vec![]),
   <l:@L> "type" <n:identifier> <r:@R> => Type::new(n.to_string(), vec![]),
+  // <l:@L> "condition" <n:identifier> "{" <expr:NodeExpr> "}" <r:@R> => Condition::new(n.to_string(), expr),
 }
 
 IRelationOrPermissions: Vec<RelationOrPermission> = {
@@ -103,5 +104,15 @@ extern {
         "->" => Token::YulArrow,
         "#" => Token::Sharp,
         "\n" => Token::Newline,
+        "*" => Token::Star,
+        "/" => Token::Slash,
+        "%" => Token::Percent,
+        "," => Token::Comma,
+        ";" => Token::Semicolon,
+        "=" => Token::Eq,
+        "!" => Token::ExclamationMark,
+        ">" => Token::Gt,
+        "<" => Token::Lt,
+        "condition" => Token::Condition,
     }
 }

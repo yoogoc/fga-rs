@@ -21,6 +21,16 @@ pub enum Token<'input> {
     Newline,                 // \n
     LBrace,                  // {
     RBrace,                  // }
+    Star,                    // \*
+    Slash,                   // /
+    Percent,                 // %
+    Comma,                   // ,
+    Semicolon,               // ;
+    Eq,                      // =
+    ExclamationMark,         // \!
+    Gt,                      // >
+    Lt,                      // <
+    Condition,               // condition
 }
 
 impl<'input> fmt::Display for Token<'input> {
@@ -48,6 +58,16 @@ impl<'input> fmt::Display for Token<'input> {
             Token::Newline => f.write_str("\\n"),
             Token::LBrace => f.write_str("{"),
             Token::RBrace => f.write_str("}"),
+            Token::Star => f.write_str("*"),
+            Token::Slash => f.write_str("/"),
+            Token::Percent => f.write_str("%"),
+            Token::Comma => f.write_str(","),
+            Token::Semicolon => f.write_str(";"),
+            Token::Eq => f.write_str("="),
+            Token::ExclamationMark => f.write_str("!"),
+            Token::Gt => f.write_str(">"),
+            Token::Lt => f.write_str("<"),
+            Token::Condition => f.write_str("condition"),
         }
     }
 }
