@@ -47,11 +47,12 @@ schemars = "0.8"
 indexmap = "2.2"
 lalrpop = "0.20"
 lalrpop-util = "0.20"
-itertools = "0.12"
+itertools = "0.13"
 unicode-xid = "0.2"
 phf = { version = "0.11", features = ["macros"] }
 tower-lsp = "0.20.0"
 async-std = { version = "1", features = ["attributes", "tokio1"] }
+evalexpr = "11.3.0"
 
 criterion = { version = "0.5", features = ["html_reports"] }
 quaternion = "1.0.0"
