@@ -3,11 +3,12 @@ use crate::{ token::Token, lexer::LexicalError, ast::* };
 grammar<'input>(input: &'input str);
 
 pub Schema: Schema = {
-  SchemaUnit* => Schema::new(<>)
+  SchemaUnit*  => Schema::new(<>)
 }
 
 SchemaUnit: SchemaUnit = {
-  <t: Type> => SchemaUnit::Type(t),
+  Type => SchemaUnit::Type(<>),
+  Condition => SchemaUnit::Condition(<>),
   <su: SchemaUnit> "\n" => su
 }
 
@@ -15,7 +16,16 @@ Type: Type = {
   <l:@L> "type" <n:identifier> "{" <rops:IRelationOrPermissions> "}" <r:@R> => Type::new(n.to_string(), rops),
   <l:@L> "type" <n:identifier> "{" "}" <r:@R> => Type::new(n.to_string(), vec![]),
   <l:@L> "type" <n:identifier> <r:@R> => Type::new(n.to_string(), vec![]),
-  // <l:@L> "condition" <n:identifier> "{" <expr:NodeExpr> "}" <r:@R> => Condition::new(n.to_string(), expr),
+}
+
+Condition: Condition = {
+  // <l:@L> "condition" <name:identifier> "(" <args: ConditionArgs> ")" "{" <expr:ConditionExpression> "}" <r:@R> => { Condition {
+  <l:@L> "condition" <name:identifier> "(" <args: ConditionArgs> ")" "{" "}" <r:@R> => {
+    Condition {
+      name: name.to_string(),
+      args,
+    }
+  },
 }
 
 IRelationOrPermissions: Vec<RelationOrPermission> = {
@@ -81,6 +91,40 @@ RelationshipSetTerm: Relationship = {
   "(" <RelationshipExpr> ")"
 }
 
+ConditionArgs: Vec<ConditionArg> = {
+  <s1:ConditionArg> <s2:("," ConditionArg)*> => {
+    let mut rsss = vec![s1];
+    rsss.extend(s2.into_iter().map(|e| e.1));
+    rsss
+  }
+}
+
+ConditionArg: ConditionArg = {
+  <name:identifier> ":" <t:ConditionType> => ConditionArg {
+    name: name.to_string(),
+    r#type: t,
+  }
+}
+
+ConditionType: ConditionType = {
+  "int" => ConditionType::Int,
+  "uint" => ConditionType::Uint,
+  "double" => ConditionType::Double,
+  "bool" => ConditionType::Bool,
+  "bytes" => ConditionType::Bytes,
+  "string" => ConditionType::String,
+  "duration" => ConditionType::Duration,
+  "timestamp" => ConditionType::Timestamp,
+  "any" => ConditionType::Any,
+  "list" "<" <t: ConditionType> ">" => ConditionType::List(Box::new(t)),
+  "map" "<" <t: ConditionType> ">"  => ConditionType::Map(Box::new(t)),
+  "ipaddress" => ConditionType::IPaddress,
+}
+
+// ConditionExpression: ConditionExpression = {
+
+// }
+
 extern {
     type Location = usize;
     type Error = LexicalError;
@@ -114,5 +158,17 @@ extern {
         ">" => Token::Gt,
         "<" => Token::Lt,
         "condition" => Token::Condition,
+        "int" => Token::Int,
+        "uint" => Token::Uint,
+        "double" => Token::Double,
+        "bool" => Token::Bool,
+        "bytes" => Token::Bytes,
+        "string" => Token::String,
+        "duration" => Token::Duration,
+        "timestamp" => Token::Timestamp,
+        "any" => Token::Any,
+        "list" => Token::List,
+        "map" => Token::Map,
+        "ipaddress" => Token::IPaddress,
     }
 }

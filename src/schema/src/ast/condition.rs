@@ -8,17 +8,28 @@ pub use evalexpr::{Node, Operator, Value};
 #[derive(Debug, Clone, PartialEq, FromJsonQueryResult, Deserialize, Serialize, JsonSchema)]
 pub struct Condition {
     pub name: String,
-    pub args: Vec<Arg>,
-    // pub body: Node,
+    pub args: Vec<ConditionArg>,
+    // pub body: ConditionExpression,
 }
 
 #[derive(Debug, Clone, PartialEq, FromJsonQueryResult, Deserialize, Serialize, JsonSchema)]
-pub struct Arg {
+pub struct ConditionArg {
     pub name: String,
-    pub r#type: ArgType,
+    pub r#type: ConditionType,
 }
 
 #[derive(Debug, Clone, PartialEq, FromJsonQueryResult, Deserialize, Serialize, JsonSchema)]
-pub enum ArgType {
+pub enum ConditionType {
+    Int,
+    Uint,
+    Double,
+    Bool,
+    Bytes,
     String,
+    Duration,
+    Timestamp,
+    Any,
+    List(Box<ConditionType>),
+    Map(Box<ConditionType>),
+    IPaddress,
 }

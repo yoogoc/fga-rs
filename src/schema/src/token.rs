@@ -31,6 +31,18 @@ pub enum Token<'input> {
     Gt,                      // >
     Lt,                      // <
     Condition,               // condition
+    Int,
+    Uint,
+    Double,
+    Bool,
+    Bytes,
+    String,
+    Duration,
+    Timestamp,
+    Any,
+    List,
+    Map,
+    IPaddress,
 }
 
 impl<'input> fmt::Display for Token<'input> {
@@ -68,6 +80,18 @@ impl<'input> fmt::Display for Token<'input> {
             Token::Gt => f.write_str(">"),
             Token::Lt => f.write_str("<"),
             Token::Condition => f.write_str("condition"),
+            Token::Int => f.write_str("Int"),
+            Token::Uint => f.write_str("Uint"),
+            Token::Double => f.write_str("Double"),
+            Token::Bool => f.write_str("Bool"),
+            Token::Bytes => f.write_str("Bytes"),
+            Token::String => f.write_str("String"),
+            Token::Duration => f.write_str("Duration"),
+            Token::Timestamp => f.write_str("Timestamp"),
+            Token::Any => f.write_str("Any"),
+            Token::List => f.write_str("List"),
+            Token::Map => f.write_str("Map"),
+            Token::IPaddress => f.write_str("IPaddress"),
         }
     }
 }
