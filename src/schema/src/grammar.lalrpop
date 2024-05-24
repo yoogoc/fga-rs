@@ -16,7 +16,6 @@ Type: Type = {
   <l:@L> "type" <n:identifier> "{" <rops:IRelationOrPermissions> "}" <r:@R> => Type::new(n.to_string(), rops),
   <l:@L> "type" <n:identifier> "{" "}" <r:@R> => Type::new(n.to_string(), vec![]),
   <l:@L> "type" <n:identifier> <r:@R> => Type::new(n.to_string(), vec![]),
-  // <l:@L> "condition" <n:identifier> "{" <expr:NodeExpr> "}" <r:@R> => Condition::new(n.to_string(), expr),
 }
 
 Condition: Condition = {
@@ -180,6 +179,5 @@ extern {
         "!" => Token::ExclamationMark,
         ">" => Token::Gt,
         "<" => Token::Lt,
-        "condition" => Token::Condition,
     }
 }
