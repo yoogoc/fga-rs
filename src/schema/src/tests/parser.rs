@@ -274,9 +274,9 @@ fn test_parser4() {
     }
 
     // expr eval engine use evalexpr?
-    // cond has_valid_ip(user_ip ipaddress, allowed_range string) {
-    //   user_ip.in_cidr(allowed_range)
-    // }";
+    condition has_valid_ip(user_ip: ipaddress, allowed_range: string) {
+      user_ip.in_cidr(allowed_range)
+    }";
     let result = parse(schema).unwrap();
     assert_eq!(
         result.0.types,

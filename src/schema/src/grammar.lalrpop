@@ -19,11 +19,11 @@ Type: Type = {
 }
 
 Condition: Condition = {
-  // <l:@L> "condition" <name:identifier> "(" <args: ConditionArgs> ")" "{" <expr:ConditionExpression> "}" <r:@R> => { Condition {
-  <l:@L> "condition" <name:identifier> "(" <args: ConditionArgs> ")" "{" "}" <r:@R> => {
+  <l:@L> "condition" <name:identifier> "(" <args: ConditionArgs> ")" "{" <body:ConditionExpression*> "}" <r:@R> => {
     Condition {
       name: name.to_string(),
       args,
+      body,
     }
   },
 }
@@ -121,9 +121,48 @@ ConditionType: ConditionType = {
   "ipaddress" => ConditionType::IPaddress,
 }
 
-// ConditionExpression: ConditionExpression = {
-
-// }
+ConditionExpression: ConditionExpression = {
+  identifier => ConditionExpression::Identifier(<>.to_string()),
+  ":" => ConditionExpression::Colon,
+  "(" => ConditionExpression::LBracket,
+  ")" => ConditionExpression::RBracket,
+  "^" => ConditionExpression::Caret,
+  "&" => ConditionExpression::And,
+  "|" => ConditionExpression::Or,
+  "+" => ConditionExpression::Add,
+  "-" => ConditionExpression::Sub,
+  "->" => ConditionExpression::YulArrow,
+  "#" => ConditionExpression::Sharp,
+  "\n" => ConditionExpression::Newline,
+  "*" => ConditionExpression::Star,
+  "/" => ConditionExpression::Slash,
+  "%" => ConditionExpression::Percent,
+  "," => ConditionExpression::Comma,
+  ";" => ConditionExpression::Semicolon,
+  "=" => ConditionExpression::Eq,
+  "!" => ConditionExpression::ExclamationMark,
+  ">" => ConditionExpression::Gt,
+  "<" => ConditionExpression::Lt,
+  "int" => ConditionExpression::Int,
+  "uint" => ConditionExpression::Uint,
+  "double" => ConditionExpression::Double,
+  "bool" => ConditionExpression::Bool,
+  "bytes" => ConditionExpression::Bytes,
+  "string" => ConditionExpression::String,
+  "duration" => ConditionExpression::Duration,
+  "timestamp" => ConditionExpression::Timestamp,
+  "any" => ConditionExpression::Any,
+  "list" => ConditionExpression::List,
+  "map" => ConditionExpression::Map,
+  "ipaddress" => ConditionExpression::IPaddress,
+  string => ConditionExpression::StringLiteral(<>.to_string()),
+  int => ConditionExpression::IntLiteral(<>),
+  double => ConditionExpression::DoubleLiteral(<>),
+  "$" => ConditionExpression::Dollar,
+  "`" => ConditionExpression::GraveAccent,
+  white_space => ConditionExpression::WhiteSpace,
+  "." => ConditionExpression::Point,
+}
 
 extern {
     type Location = usize;
@@ -179,5 +218,12 @@ extern {
         "!" => Token::ExclamationMark,
         ">" => Token::Gt,
         "<" => Token::Lt,
+        string => Token::StringLiteral(<&'input str>),
+        int => Token::IntLiteral(<i64>),
+        double => Token::DoubleLiteral(<f64>),
+        "$" => Token::Dollar,
+        "`" => Token::GraveAccent,
+        "." => Token::Point,
+        white_space => Token::WhiteSpace,
     }
 }

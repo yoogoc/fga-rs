@@ -1,58 +1,62 @@
 use std::fmt;
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Token<'input> {
-    Identifier(&'input str), // identifier
-    Comment(&'input str),    // identifier
-    Type,                    // type
-    Relation,                // relation
-    Permission,              // permission
-    Cond,                    // cond
-    Colon,                   // :
-    LBracket,                // (
-    RBracket,                // )
-    Caret,                   // ^
-    And,                     // &
-    Or,                      // |
-    Add,                     // +
-    Sub,                     // -
-    YulArrow,                // ->
-    Sharp,                   // #
-    Newline,                 // \n
-    LBrace,                  // {
-    RBrace,                  // }
-    Star,                    // \*
-    Slash,                   // /
-    Percent,                 // %
-    Comma,                   // ,
-    Semicolon,               // ;
-    Eq,                      // =
-    ExclamationMark,         // \!
-    Gt,                      // >
-    Lt,                      // <
-    Condition,               // condition
-    Int,
-    Uint,
-    Double,
-    Bool,
-    Bytes,
-    String,
-    Duration,
-    Timestamp,
-    Any,
-    List,
-    Map,
-    IPaddress,
+    Identifier(&'input str),    // identifier
+    Comment(&'input str),       // comment
+    Type,                       // type
+    Relation,                   // relation
+    Permission,                 // permission
+    Cond,                       // cond
+    Colon,                      // :
+    LBracket,                   // (
+    RBracket,                   // )
+    Caret,                      // ^
+    And,                        // &
+    Or,                         // |
+    Add,                        // +
+    Sub,                        // -
+    YulArrow,                   // ->
+    Sharp,                      // #
+    Newline,                    // \n
+    LBrace,                     // {
+    RBrace,                     // }
+    Star,                       // \*
+    Slash,                      // /
+    Percent,                    // %
+    Comma,                      // ,
+    Semicolon,                  // ;
+    Eq,                         // =
+    ExclamationMark,            // (nothing)!
+    Gt,                         // >
+    Lt,                         // <
+    Condition,                  // condition
+    Int,                        // int
+    Uint,                       // uint
+    Double,                     // double
+    Bool,                       // bool
+    Bytes,                      // bytes
+    String,                     // string
+    Duration,                   // duration
+    Timestamp,                  // timestamp
+    Any,                        // any
+    List,                       // list
+    Map,                        // map
+    IPaddress,                  // ipaddress
+    StringLiteral(&'input str), // string literal
+    IntLiteral(i64),            // int literal
+    DoubleLiteral(f64),         // double literal
+    Dollar,                     // $
+    GraveAccent,                // `
+    WhiteSpace,                 // space
+    Point,                      // .
 }
 
 impl<'input> fmt::Display for Token<'input> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Token::Identifier(id) => f.write_str(id),
-            Token::Comment(comment) => {
-                f.write_str("// ")?;
-                f.write_str(comment)
-            }
+            Token::Comment(comment) => f.write_fmt(format_args!("// {}", comment)),
             Token::Type => f.write_str("type"),
             Token::Relation => f.write_str("relation"),
             Token::Permission => f.write_str("permission"),
@@ -92,6 +96,13 @@ impl<'input> fmt::Display for Token<'input> {
             Token::List => f.write_str("List"),
             Token::Map => f.write_str("Map"),
             Token::IPaddress => f.write_str("IPaddress"),
+            Token::StringLiteral(string) => f.write_fmt(format_args!("\"{}\"", string)),
+            Token::IntLiteral(int) => f.write_fmt(format_args!("{}", int)),
+            Token::DoubleLiteral(double) => f.write_fmt(format_args!("{}", double)),
+            Token::Dollar => f.write_str("$"),
+            Token::GraveAccent => f.write_str("`"),
+            Token::WhiteSpace => f.write_str(" "),
+            Token::Point => f.write_str("."),
         }
     }
 }

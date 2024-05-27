@@ -57,6 +57,96 @@ impl<'input> Lexer<'input> {
                         Some(Ok((i, Token::Identifier(id), end)))
                     };
                 }
+                Some((start, ch)) if ch >= '0' && ch <= '9' => {
+                    if ch == '0' && matches!(self.chars.peek(), Some((_, 'x')) | Some((_, 'X'))) {
+                        let mut end = start;
+                        _ = self.next_char();
+                        loop {
+                            let peek = self.chars.peek();
+                            if let Some((i, ch)) = peek {
+                                let ch = ch.clone();
+                                if (ch >= '0' && ch <= '9') || ((ch >= 'a' && ch <= 'e') || (ch >= 'A' && ch <= 'E')) {
+                                    end = i.clone();
+                                    _ = self.next_char();
+                                } else {
+                                    break;
+                                }
+                            } else {
+                                end = self.input.len();
+                                break;
+                            }
+                        }
+                        return Some(Ok((
+                            start,
+                            Token::IntLiteral(i64::from_str_radix(&self.input[(start + 2)..end], 16).unwrap()),
+                            end,
+                        )));
+                    } else {
+                        let mut exist_decimal_part = false;
+                        let mut end = start;
+                        loop {
+                            let peek = self.chars.peek();
+                            if let Some((i, ch)) = peek {
+                                let ch = ch.clone();
+                                if ch >= '0' && ch <= '9' {
+                                    end = i.clone();
+                                    _ = self.next_char();
+                                } else if ch == '.' {
+                                    end = i.clone();
+                                    if !exist_decimal_part {
+                                        _ = self.next_char();
+                                        exist_decimal_part = true;
+                                    } else {
+                                        return Some(Err(LexicalError::UnrecognisedToken(
+                                            (start, end),
+                                            self.input[start..end].to_owned(),
+                                        )));
+                                    }
+                                } else {
+                                    break;
+                                }
+                            } else {
+                                end = self.input.len();
+                                break;
+                            }
+                        }
+
+                        if exist_decimal_part {
+                            return Some(Ok((
+                                start,
+                                Token::DoubleLiteral(self.input[start..end].parse::<f64>().unwrap()),
+                                end,
+                            )));
+                        }
+                        return Some(Ok((
+                            start,
+                            Token::IntLiteral(self.input[start..end].parse::<i64>().unwrap()),
+                            end,
+                        )));
+                    }
+                }
+                Some((start, '"')) => {
+                    let mut end;
+                    loop {
+                        if let Some((i, ch)) = self.next_char() {
+                            end = i;
+                            if ch == '"' {
+                                return Some(Ok((start, Token::StringLiteral(&self.input[start..end - 1]), end)));
+                            }
+                        } else {
+                            end = self.input.len();
+                            return Some(Err(LexicalError::UnrecognisedToken(
+                                (start, end),
+                                self.input[start..end].to_owned(),
+                            )));
+                        }
+                    }
+                }
+
+                Some((i, ',')) => return Some(Ok((i, Token::Comma, i + 1))),
+                Some((i, '.')) => return Some(Ok((i, Token::Point, i + 1))),
+                Some((i, '$')) => return Some(Ok((i, Token::Dollar, i + 1))),
+                Some((i, '`')) => return Some(Ok((i, Token::GraveAccent, i + 1))),
                 Some((i, '{')) => return Some(Ok((i, Token::LBrace, i + 1))),
                 Some((i, '}')) => return Some(Ok((i, Token::RBrace, i + 1))),
                 Some((i, ':')) => return Some(Ok((i, Token::Colon, i + 1))),
@@ -203,4 +293,17 @@ static KEYWORDS: phf::Map<&'static str, Token> = phf_map! {
     "relation" => Token::Relation,
     "permission" => Token::Permission,
     "cond" => Token::Cond,
+    "condition" => Token::Condition,
+    "int" => Token::Int,
+    "uint" => Token::Uint,
+    "double" => Token::Double,
+    "bool" => Token::Bool,
+    "bytes" => Token::Bytes,
+    "string" => Token::String,
+    "duration" => Token::Duration,
+    "timestamp" => Token::Timestamp,
+    "any" => Token::Any,
+    "list" => Token::List,
+    "map" => Token::Map,
+    "ipaddress" => Token::IPaddress,
 };
